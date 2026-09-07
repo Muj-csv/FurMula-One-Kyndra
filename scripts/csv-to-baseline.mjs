@@ -8,10 +8,20 @@
 // mean/range formatted correctly.
 //
 // Usage:
-//   node scripts/csv-to-baseline.mjs path/to/sessions.csv
+//   node scripts/csv-to-baseline.mjs path/to/sessions.csv <cohort-fingerprint>
 //
 // Expected header row (see research/templates/baseline-scoring-template.csv):
 //   participant,violations
+//
+// THE FINGERPRINT IS REQUIRED, and it is the fingerprint of the cohort the
+// participants actually placed — print it before you run the sessions with:
+//
+//   npx vitest run tests/human-baseline.test.ts
+//
+// It is what lets the app notice that the cohort has changed underneath a
+// recorded result and go quiet instead of publishing a stale claim. See
+// src/data/cohortFingerprint.ts. This script cannot compute it for you: it is
+// dependency-free plain JS and the cohort lives in TypeScript.
 
 import { readFileSync } from 'node:fs';
 
@@ -30,8 +40,19 @@ function parseCsv(text) {
 
 function main() {
   const csvPath = process.argv[2];
+  const fingerprint = process.argv[3];
   if (csvPath === undefined) {
-    fail('usage: node scripts/csv-to-baseline.mjs path/to/sessions.csv');
+    fail('usage: node scripts/csv-to-baseline.mjs path/to/sessions.csv <cohort-fingerprint>');
+  }
+  if (fingerprint === undefined) {
+    fail(
+      'missing <cohort-fingerprint>. Print the current one with "npx vitest run ' +
+        'tests/human-baseline.test.ts". It records which cohort these sessions were ' +
+        'run against, so a later edit to cohort.ts cannot leave a stale result on screen.',
+    );
+  }
+  if (!/^[0-9a-f]{8}$/.test(fingerprint)) {
+    fail(`<cohort-fingerprint> is "${fingerprint}" — expected 8 lowercase hex characters.`);
   }
 
   const rows = parseCsv(readFileSync(csvPath, 'utf8'));
@@ -68,9 +89,11 @@ function main() {
   meanViolations: ${Number(mean.toFixed(2))},
   range: [${min}, ${max}] as [number, number],
   caveat: 'Informal exercise with ${violations.length} participants, not a controlled study.',
+  cohortFingerprint: '${fingerprint}',
 } as const;`;
 
   console.log(`// Recorded from ${violations.length} real session(s): [${violations.join(', ')}] violations.`);
+  console.log(`// Cohort fingerprint ${fingerprint} — re-run the study if this stops matching.`);
   console.log('// Paste this over the existing HUMAN_BASELINE export in src/data/humanBaseline.ts.');
   console.log(object);
 }
