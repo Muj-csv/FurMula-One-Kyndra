@@ -8,6 +8,7 @@
 // state carries a word.
 
 import type { Animal, Applicant, Cohort, GreedyResult, ImpactModel, MatchResult } from '../engine';
+import { countViolations } from '../engine';
 import { UnmatchedPanel } from './UnmatchedPanel';
 import { EquityDial } from './EquityDial';
 import { SwapAttempt } from './SwapAttempt';
@@ -16,6 +17,8 @@ import { ConstraintGrid } from './ConstraintGrid';
 import { WhyNotPanel } from './WhyNotPanel';
 import { RegretView } from './RegretView';
 import { ImpactPanel } from './ImpactPanel';
+import { HumanBaselinePanel } from './HumanBaselinePanel';
+import { baselineComparison } from '../data/humanBaseline';
 
 interface Props {
   result: MatchResult;
@@ -84,6 +87,25 @@ export function ResultsBoard({
 
       {/* ─── Greedy → stable ─────────────────────────────────────────── */}
       <GreedyStableTransition greedy={greedy} stable={result} animals={animals} applicants={applicants} />
+
+      {/* ─── How does this compare to a person? ──────────────────────────
+          Renders nothing until the study has actually been run — the gate is
+          in baselineComparison(), not here. See HumanBaselinePanel. */}
+      <HumanBaselinePanel
+        comparison={baselineComparison(
+          cohort,
+          // Measured, not asserted. The summary tile above prints a literal 0
+          // because the property tests guarantee it; this panel is a direct
+          // comparison against what people scored, so it counts the real board.
+          // If the engine ever regressed, this would show it rather than
+          // repeat the claim.
+          countViolations(
+            cohort,
+            new Map(result.assignments.map((a) => [a.animalId, a.applicantId])),
+          ),
+          greedy.constraintViolations,
+        )}
+      />
 
       {/* ─── Assignments ─────────────────────────────────────────────── */}
       <h3 className="results__heading">Proposed placements</h3>

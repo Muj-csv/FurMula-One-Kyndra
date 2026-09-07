@@ -9,6 +9,34 @@ violations. Kyndra produces zero, provably."*
 
 ---
 
+## Before you start: record the cohort fingerprint
+
+Run this and keep the 8-character value it prints:
+
+```bash
+npx vitest run tests/human-baseline.test.ts
+```
+
+```
+COHORT FINGERPRINT — 2d2b069c
+  16 animals, 22 households.
+```
+
+**Why.** This study measures people placing *the board that was live when they
+sat down*. `src/data/cohort.ts` already changed once mid-week (8 Sept: Bruno's
+size, p14's size ceiling, p21's named request), and a session run before that
+scores a cohort that no longer exists. The fingerprint travels with the
+recorded result, and the app refuses to show the number once it stops matching
+the cohort on screen — so a stale claim goes quiet instead of going on stage.
+
+Take it **before** the sessions, and if anyone edits the cohort mid-study,
+stop and start over. A study spanning two different cohorts is not a study.
+
+The fingerprint deliberately ignores stated preferences (`prefersSpecies`,
+`prefersAge`, `prefersEnergy`, `specificAnimalId`) — participants are never
+shown those, so changing one cannot alter anybody's pairing or its violation
+count. See `src/data/cohortFingerprint.ts`.
+
 ## What you need
 
 - 5 participants, one at a time (or in parallel if you have proctors for
@@ -91,8 +119,12 @@ Put each participant's final violation count into a CSV matching
 one row per person), then run:
 
 ```bash
-node scripts/csv-to-baseline.mjs path/to/sessions.csv
+node scripts/csv-to-baseline.mjs path/to/sessions.csv <cohort-fingerprint>
 ```
+
+The fingerprint is the one you took before the sessions. It is **required** —
+the converter refuses to produce a record without it, because a result with no
+cohort attached cannot be checked for staleness later.
 
 This prints a ready-to-paste `HUMAN_BASELINE` object with the mean and
 range computed for you, and `recorded: true` only because you gave it real
@@ -111,12 +143,14 @@ export const HUMAN_BASELINE = {
   meanViolations: /* mean of the 5 violation counts */,
   range: [/* min */, /* max */],
   caveat: 'Informal exercise with 5 participants, not a controlled study.',
+  cohortFingerprint: /* the value you took before the sessions */,
 } as const;
 ```
 
 **Do not** set `recorded: true` until real numbers are in — the file's own
 header comment explains why a placeholder `0` would read as a fabricated
-result. `meanViolations`/`range` are typed `number | null` / `[number,
+result. The panel stays dark on any of three conditions: not run, flag flipped
+without a result, or a fingerprint that no longer matches the live cohort. `meanViolations`/`range` are typed `number | null` / `[number,
 number] | null` for exactly this reason; only replace `null` once you have
 the real numbers.
 
