@@ -6,17 +6,31 @@
 // already eliminated — that guardrail is stated here because a judge should
 // hear it before they touch the slider, not discover it by asking.
 
-import type { Animal } from '../engine';
-import { equityFraction } from '../engine';
+import type { Animal, Applicant } from '../engine';
+import { equityFraction, evaluatePair } from '../engine';
 
 interface Props {
   value: number;
   onChange: (value: number) => void;
   animals: Animal[];
+  applicants: Applicant[];
 }
 
-export function EquityDial({ value, onChange, animals }: Props) {
-  const longestWaiting = [...animals].sort((a, b) => b.daysInShelter - a.daysInShelter)[0];
+export function EquityDial({ value, onChange, animals, applicants }: Props) {
+  // NOT simply the longest wait in the cohort. The longest-waiting animal here
+  // is Ember (415 days), and she has ZERO viable households — no dial setting
+  // can ever move her. Naming her sends the judge to watch an animal who will
+  // not move, at the exact moment the presenter says "watch Bruno", and the
+  // hero interaction reads as having failed.
+  //
+  // The dial can only act on an animal some household could actually take, so
+  // that is the animal to name: the longest wait with at least one viable
+  // household. Falls back to the longest wait overall if none qualify.
+  const movable = animals.filter((animal) =>
+    applicants.some((applicant) => evaluatePair(animal, applicant).length === 0),
+  );
+  const byWait = (a: Animal, b: Animal) => b.daysInShelter - a.daysInShelter;
+  const longestWaiting = [...movable].sort(byWait)[0] ?? [...animals].sort(byWait)[0];
 
   return (
     <section className="dial" aria-label="EquityDial">

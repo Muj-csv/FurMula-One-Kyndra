@@ -75,7 +75,12 @@ export function ResultsBoard({
         reasons attached, not a decision.
       </p>
 
-      <EquityDial value={equityWeight} onChange={onEquityWeightChange} animals={animals} />
+      <EquityDial
+        value={equityWeight}
+        onChange={onEquityWeightChange}
+        animals={animals}
+        applicants={applicants}
+      />
 
       {/* ─── Greedy → stable ─────────────────────────────────────────── */}
       <GreedyStableTransition greedy={greedy} stable={result} animals={animals} applicants={applicants} />

@@ -21,7 +21,12 @@ export function App() {
   const [cohort, setCohort] = useState<Cohort>(COHORT);
   const [hasRun, setHasRun] = useState(false);
   const [showIntake, setShowIntake] = useState(false);
-  const [equityWeight, setEquityWeight] = useState(0.5);
+  // Starts at 0 — PURE WANT — on purpose. The demo's hero beat (PRD §8 step 8)
+  // is "slide the dial, Bruno matches", and Bruno is only unmatched below 0.30.
+  // Defaulting to 0.5 meant the judge's very first board already had him placed
+  // and there was nothing left to reveal. It is also the more honest default:
+  // no equity thumb on the scale until someone deliberately asks for one.
+  const [equityWeight, setEquityWeight] = useState(0);
   const [assumptionLevel, setAssumptionLevel] = useState(ASSUMPTION_CONSERVATIVE);
 
   const outcome = useMemo(

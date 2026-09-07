@@ -373,7 +373,7 @@ export const HUMAN_BASELINE = {
 |---|---|---|
 | `AnimalWall` | Who is waiting? | Landing state. Photos, names, days-in-shelter badges. **Not a form.** |
 | `JudgeChallenge` | Can *you* do this? | Judge places 3–4 animals on a timer, then sees what they got wrong. **Strongest opening available.** |
-| `ConstraintGrid` | How big is this really? | Animals × applicants, green/red. 15 × 40 = 600 judgements, in one image |
+| `ConstraintGrid` | How big is this really? | Animals × applicants, green/red. 16 × 22 = 352 judgements on the demo cohort, in one image |
 | `ApplicantIntake` | What does this household look like? | Opens with "is there a specific animal you're here for?" |
 | `ResultsBoard` | Who goes where? | Animated greedy→stable transition: cards move, violation badges vanish |
 | `MatchDetail` | Why this pairing? | Rationale + counterfactual |

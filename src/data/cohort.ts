@@ -24,6 +24,32 @@
 // Day 1 action still open: source free-licence images, attribute them, and
 // drop the paths in here. An empty string is honest; a broken path is not.
 
+// ─── DEMO NARRATIVE — VERIFIED AGAINST REAL OUTPUT, DO NOT TUNE BLIND ──────
+//
+// PRD §9 lists "the Bruno narrative doesn't hold in the real output" as the
+// one High-likelihood / Severe risk, and prescribes the fix: "Adjust the
+// cohort so the story is true — never adjust the story."
+//
+// It did not hold. Three values below were changed to make it true, and the
+// two claims the demo makes out loud are now pinned by tests/narrative.test.ts:
+//
+//   1. Bruno is UNMATCHED at equityWeight 0 and MATCHED from 0.30 up.
+//      (bruno.sizeKg = 41, p14.maxSizeKg = 38)
+//      This is PRD §8 step 8 — "Slide the equity dial. Bruno matches."
+//      Six placements move in the cascade, and every setting stays stable
+//      with zero hard-constraint violations.
+//
+//   2. Every household that came for an animal BY NAME gets that animal at
+//      EVERY dial setting. (p21's named claim on Bruno removed)
+//      This is the guardrail the script has the presenter state unprompted.
+//
+//   3. Ember is unmatched at every setting — zero viable households in this
+//      cohort. That is the recruitment diagnostic (PRD §8 step 9), not a bug.
+//      Ember must NOT become placeable, or that beat disappears.
+//
+// Change any of these values and the tests will tell you which beat you broke.
+// Re-run `npm test` after ANY edit to this file.
+
 import type { Animal, Applicant, Cohort } from '../engine';
 
 export const ANIMALS: Animal[] = [
@@ -33,7 +59,12 @@ export const ANIMALS: Animal[] = [
     photo: '',
     species: 'dog',
     ageYears: 7,
-    sizeKg: 32,
+    // NARRATIVE-CRITICAL — see the DEMO NARRATIVE note at the top of this file.
+    // 41kg puts Bruno over p09/p14/p18/p21's stated size ceilings, which is what
+    // leaves him with only p03 and p05 — and p05 came for Sable by name. Drop
+    // this below 38 and Bruno is placed at every dial setting, which silently
+    // kills the demo's hero beat. Pinned by tests/narrative.test.ts.
+    sizeKg: 41,
     energy: 4,
     behaviouralDifficulty: 4,
     okWithChildren: false,
@@ -544,7 +575,12 @@ export const APPLICANTS: Applicant[] = [
     hasOtherPets: false,
     experience: 4,
     canDoDailyMeds: true,
-    maxSizeKg: 45,
+    // NARRATIVE-CRITICAL. p14 is otherwise near-identical to p03, so with a 45kg
+    // ceiling Bruno always has a second home to fall back on and is never
+    // unmatched. 38 is this household's honest limit, not a thumb on the scale —
+    // it leaves p03 as Bruno's one contested home, which is the whole beat.
+    // Pinned by tests/narrative.test.ts.
+    maxSizeKg: 38,
     specificAnimalId: null,
     prefersSpecies: 'dog',
     prefersAge: 'adult',
@@ -664,7 +700,18 @@ export const APPLICANTS: Applicant[] = [
     experience: 4,
     canDoDailyMeds: true,
     maxSizeKg: 35,
-    specificAnimalId: 'bruno',
+    // WAS `specificAnimalId: 'bruno'`, and that could not stand. A household
+    // that comes for an animal by name ranks it at SPECIFIC_ANIMAL_SCORE, which
+    // nothing can outbid — so Bruno was guaranteed a home at EVERY dial setting
+    // and "slide the dial, Bruno matches" (PRD §8, step 8) was simply false.
+    // Worse: raising the dial moved Bruno to a household the SHELTER scored
+    // higher, so the family who asked for him by name visibly lost him on
+    // stage — in the same breath the script tells the presenter to say a named
+    // choice is never overridden.
+    //
+    // The named-request rule is still demonstrated twice, by p05 → Sable and
+    // p08 → Otis, and both now hold at every dial setting.
+    specificAnimalId: null,
     prefersSpecies: 'dog',
     prefersAge: 'adult',
     prefersEnergy: 4,
