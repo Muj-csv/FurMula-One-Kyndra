@@ -1,6 +1,10 @@
-# FitFirst — Architecture
+# Kyndra — Architecture
 
-**Companion to `fitfirst-prd-final.md` · v4.0 · Sept 6, 2026 · Final**
+**Where the right homes meet the right animals.**
+
+**Companion to `kyndra-prd-final.md` · v4.0 · Sept 6, 2026 · Final**
+
+*Renamed from FitFirst. The rename changes no technical decision in this document: stack, boundaries, data model, pipeline, and tests are unchanged.*
 
 ---
 
@@ -52,7 +56,7 @@ No server. No database. No API calls. No device permissions. No key.
 # 3. Repository layout
 
 ```
-fitfirst/
+kyndra/
 ├── src/
 │   ├── engine/                   ← SINGLE OWNER. Nobody else commits here.
 │   │   ├── constraints.ts
@@ -92,6 +96,8 @@ fitfirst/
 │   └── icon-192.png, icon-512.png
 └── vite.config.ts
 ```
+
+**Phase 0 of the PRD (§2) establishes this repository foundation before feature implementation begins.** This layout is authoritative; the PRD does not restate it.
 
 **`engine/index.ts` exposes one function.** The UI never reaches into engine internals. That keeps the engine independently testable and means a Wednesday-night UI rewrite cannot break correctness.
 
@@ -317,7 +323,7 @@ Complexity: O(n²) worst case. At shelter scale it completes in single-digit mil
 
 # 7. Tests and measurement
 
-Written **Day 3, alongside the algorithm — not after it.** A test written Thursday against code that already passed by luck proves nothing.
+Written **Day 3, alongside the algorithm — not after it.** A test written Thursday against code that already passed by luck proves nothing. Phase 0 stands up the Vitest harness only; the property tests below belong to the matching-engine phase.
 
 ```ts
 // PROPERTY TEST 1 — stability

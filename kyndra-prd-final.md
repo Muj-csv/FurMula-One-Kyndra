@@ -1,6 +1,8 @@
-# FitFirst — Product Requirements Document
+# Kyndra — Product Requirements Document
 
-**Transparent, explainable adoption matching for shelters**
+**Where the right homes meet the right animals.**
+
+*Transparent, explainable adoption matching for shelters. Renamed from FitFirst; the product thesis, scope, and methodology are unchanged.*
 
 | | |
 |---|---|
@@ -9,8 +11,8 @@
 | **Form factor** | Static web app on Vercel. Any browser, anywhere. PWA-installable. |
 | **Cost** | $0. No backend, no database, no external API, no key, no card on file. |
 | **Doc owner** | Sensei (team lead) |
-| **Version** | v4.0 — Sept 6, 2026. **Final.** Supersedes v1–v3. |
-| **Companion** | `fitfirst-architecture.md` |
+| **Version** | v4.1 — Sept 7, 2026. **Final.** Supersedes v1–v4.0. Adds Phase 0; renames the project to Kyndra. |
+| **Companion** | `kyndra-architecture-final.md` — the authoritative technical layout |
 
 ---
 
@@ -39,7 +41,7 @@ Above all: where allocation systems like this exist, they are opaque. A shelter 
 
 ## Solution
 
-FitFirst treats shelter placement as what it structurally is — **a two-sided matching problem with hard constraints and a known solution** — and makes every step inspectable, testable, and arguable.
+Kyndra treats shelter placement as what it structurally is — **a two-sided matching problem with hard constraints and a known solution** — and makes every step inspectable, testable, and arguable.
 
 ```
 "Is there a specific animal you're here for?"     Animal requirement profiles
@@ -110,6 +112,94 @@ Every hard constraint maps to a documented cause of adoption return, citation on
 
 # 2. Scope
 
+## Implementation lifecycle
+
+```text
+PHASE 0   Repository Scaffolding & Technical Foundation
+             ↓
+P0        Core Product / Matching Implementation
+             ↓
+P1        Evidence, Validation & Differentiators
+             ↓
+P2        Polish & Demo Experience
+             ↓
+          Final Integration
+             ↓
+          Final Testing & Validation
+```
+
+Phase 0 is **not** a product priority tier. P0/P1/P2 describe what the product must do; Phase 0 describes the repository the product is built in. It runs once, before P0, and is prerequisite to everything after it. On the Day 1 timeline (§6) it is the whole of Day 1 alongside the Vercel deploy.
+
+## Phase 0 — Repository Scaffolding & Technical Foundation
+
+**Purpose:** stand up the technical skeleton so that P0 can be implemented cleanly, by several developers and coding agents at once, without anyone inventing structure mid-build.
+
+**The Architecture document is authoritative for the layout.** `kyndra-architecture-final.md` §3 defines the repository tree, §2 the stack, §4 the data model. Phase 0 builds exactly that tree. This PRD does not define a second structure, and a discrepancy between the two is resolved in the Architecture's favour.
+
+### Phase 0 establishes
+
+| Area | What is created |
+|---|---|
+| Repository structure | The tree in Architecture §3, directories present and empty-but-real |
+| Source directories | `src/engine/`, `src/data/`, `src/components/`, `tests/`, `public/` |
+| **Engine boundary** | `src/engine/` with `index.ts` as its **only** public surface, exporting the `runMatch()` signature. Nothing outside the engine imports an engine internal |
+| Data boundary | `src/data/` holds bundled data and constants only — no logic, no components |
+| Component boundary | `src/components/` holds React only — no matching logic ever lives here |
+| Test infrastructure | Vitest installed, configured, and running a trivial passing test from `tests/` |
+| Build configuration | Vite project that builds to `dist/` with no config file beyond `vite.config.ts` |
+| TypeScript configuration | `tsconfig.json` valid, strict, type-checking clean |
+| Vite configuration | `vite.config.ts` present and valid |
+| Development environment | `npm install` → `npm run dev` works from a clean clone |
+| Dependencies | Vite, React, TypeScript, Vitest, and styling only. Nothing else |
+| Application entry point | `index.html` → `src/main.tsx` → `src/App.tsx`, rendering a placeholder shell |
+| Test entry point | `tests/engine.test.ts` exists and runs |
+| Public/static assets | `public/manifest.json` and the 192/512 icons, linked from `index.html` |
+| Naming conventions | File names as written in Architecture §3; components PascalCase, engine modules camelCase |
+| Ownership boundaries | The single-owner rule on `src/engine/` (§7) stated in the repo, not just in this doc |
+| Deployment | First Vercel deploy from the empty shell — "it works on Vercel" is a Day 1 fact, not a Thursday discovery |
+
+### Phase 0 is not feature development
+
+Phase 0 must **not** implement:
+
+- Gale–Shapley deferred acceptance
+- Hard-constraint evaluation
+- Preference derivation (either side)
+- Equity logic
+- Stability verification
+- Regret calculations
+- Impact calculations
+- Explanations or counterfactuals
+- Swap evaluation
+- Recruitment diagnostics
+- Any full UI flow
+- Any product behaviour
+
+Those are P0–P2 and are listed below. Minimal compile-safe stubs — an exported `runMatch()` that throws `not implemented`, an empty component file — are acceptable where they are needed to make the boundary real. **Do not fabricate functionality to make the repository look finished.** A stub that returns a plausible fake result is worse than a stub that throws.
+
+### Tests in Phase 0
+
+Phase 0 creates the **testing infrastructure**. The two property tests, the randomised aggregate, and the human-baseline record are written alongside the matching engine in P0 (Architecture §7: tests are written with the algorithm, never after it). Do not front-load them into Phase 0, and **do not report algorithmic tests as passing before the algorithm exists** — a green suite over unimplemented code is the one result this project cannot afford to show a judge.
+
+### Phase 0 acceptance criteria
+
+Phase 0 is complete when:
+
+1. The repository structure matches Architecture §3.
+2. Required dependencies are installed, and no others.
+3. The project starts locally from a clean clone.
+4. TypeScript configuration is valid and the project type-checks.
+5. Vite configuration is valid and `vite build` succeeds.
+6. The application has a valid entry point that renders.
+7. The test infrastructure runs and reports a passing trivial test.
+8. `src/engine/` exists with `index.ts` as its sole public surface.
+9. `src/data/` and `src/components/` boundaries exist and are respected.
+10. No backend, database, API, authentication, env var, or runtime service has been introduced.
+11. No P0/P1/P2 product feature has been prematurely implemented.
+12. The build is deployed and reachable at a live URL.
+
+Only then does P0 begin.
+
 ## P0 — must work
 
 | # | Requirement |
@@ -145,7 +235,7 @@ Petfinder API integration (free key; `good_with_children` / `good_with_dogs` / `
 
 `impact panel → regret view → constraint grid → counterfactual hover → recruitment diagnostic → equity dial`
 
-**Never cut:** intake, constraint filter, derivation, deferred acceptance, results board, both property tests, the human baseline result.
+**Never cut:** intake, constraint filter, derivation, deferred acceptance, results board, both property tests, the human baseline result. **Phase 0 is not in the cut order at all** — it is the floor everything above stands on.
 
 # 3. Honesty requirements — non-negotiable
 
@@ -175,11 +265,11 @@ Wu Y, Lee CS, Lee AY, Van Gelder RN. *Improving Residency Matching Through Compu
 
 # 5. The evidence plan
 
-This is what moves FitFirst from "a working algorithm" to "a tested claim," and it targets the award this panel actually gives — Excellence in Research went to an ethics analysis in 2024, and an economic modelling study shared the 2025 Grand Prix.
+This is what moves Kyndra from "a working algorithm" to "a tested claim," and it targets the award this panel actually gives — Excellence in Research went to an ethics analysis in 2024, and an economic modelling study shared the 2025 Grand Prix.
 
 **Real applicants (Day 2, one person, no coding).** Five-minute intake with ~20 real households — classmates, ACM members, family. Home type, hours away, children, other pets, experience, openness to a senior animal. Result: *"the animals are simulated; the 20 households are real people we surveyed."*
 
-**Human baseline (Day 3–4, one afternoon).** Give five people the same cohort. Two-minute timer. Place animals first-come-first-served, as a coordinator would. Count hard-constraint violations. Result: *"Five people placed this cohort by hand. They averaged N violations. FitFirst produces zero, provably."* An observed result, not a simulated one.
+**Human baseline (Day 3–4, one afternoon).** Give five people the same cohort. Two-minute timer. Place animals first-come-first-served, as a coordinator would. Count hard-constraint violations. Result: *"Five people placed this cohort by hand. They averaged N violations. Kyndra produces zero, provably."* An observed result, not a simulated one.
 
 **Randomised aggregate (Day 3, free — reuses the property-test generator).** Run greedy and stable across 500 random cohorts, report mean violations. Kills the "your demo cohort is rigged by construction" objection before it's raised.
 
@@ -187,7 +277,7 @@ This is what moves FitFirst from "a working algorithm" to "a tested claim," and 
 
 | Day | Date | Deliverable | Gate |
 |---|---|---|---|
-| 1 | Sat 6 | Repo + **Vercel deploy day one**. `researchConstants.ts`. **Message 3–5 rescues.** Cohort drafted. **Photo licensing settled.** | Live URL |
+| 1 | Sat 6 | **Phase 0 — scaffolding (§2), all acceptance criteria met.** **Vercel deploy day one**. `researchConstants.ts`. **Message 3–5 rescues.** Cohort drafted. **Photo licensing settled.** | Live URL + Phase 0 criteria green |
 | 2 | Sun 7 | Data model, cohort with names/photos/days, constraint filter with citations. **Applicant survey out.** Tune constraint strictness against the cohort. | Filter eliminates correctly; unmatched count is plausible |
 | 3 | Mon 8 | Specific-animal question, derivation, Gale–Shapley, **both property tests**, randomised aggregate. **Deterministic tiebreak decided and documented.** | Zero blocking pairs; equity never breaches constraints |
 | **4** | **Tue 9** | **GATE — intake → derive → match → results, end to end.** Human baseline study run. | If FALSE at 9pm: cut all P1/P2, ship P0 only |
@@ -217,7 +307,7 @@ Two people can ship P0. Four makes it comfortable. **One person owns the engine 
 
 | Criterion | Argument |
 |---|---|
-| **Impact** | 16.3% of adopted dogs returned; ~35% behavioural incompatibility, 18% household-pet conflict. Each avoidable mismatch also costs an adopter — only ~1 in 10 return, behavioural returners 4× less likely. FitFirst targets the documented top causes directly |
+| **Impact** | 16.3% of adopted dogs returned; ~35% behavioural incompatibility, 18% household-pet conflict. Each avoidable mismatch also costs an adopter — only ~1 in 10 return, behavioural returners 4× less likely. Kyndra targets the documented top causes directly |
 | **Creativity** | Not a compatibility quiz — cohort-level assignment with a provable property, no model in the loop. The equity dial asks what adoption matching *should* optimise for. The unmatched analysis inverts the product by showing failures, not matches |
 | **Execution** | Live URL, deterministic engine, two property tests, a human baseline study, a 500-cohort aggregate, every constant cited |
 | **Presentation** | The judge places animals themselves before seeing any result. One named animal as the through-line. Slide the dial, watch Bruno match |
