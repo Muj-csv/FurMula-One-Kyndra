@@ -7,16 +7,30 @@
 // Match quality is never encoded in colour alone (Architecture §8): every
 // state carries a word.
 
-import type { Animal, Applicant, MatchResult } from '../engine';
+import type { Animal, Applicant, Cohort, MatchResult } from '../engine';
+import { UnmatchedPanel } from './UnmatchedPanel';
+import { EquityDial } from './EquityDial';
+import { SwapAttempt } from './SwapAttempt';
 
 interface Props {
   result: MatchResult;
+  cohort: Cohort;
   animals: Animal[];
   applicants: Applicant[];
   greedyViolations: number;
+  equityWeight: number;
+  onEquityWeightChange: (value: number) => void;
 }
 
-export function ResultsBoard({ result, animals, applicants, greedyViolations }: Props) {
+export function ResultsBoard({
+  result,
+  cohort,
+  animals,
+  applicants,
+  greedyViolations,
+  equityWeight,
+  onEquityWeightChange,
+}: Props) {
   const animalName = (id: string) => animals.find((a) => a.id === id)?.name ?? id;
   const applicantName = (id: string) => applicants.find((p) => p.id === id)?.name ?? id;
 
@@ -49,6 +63,8 @@ export function ResultsBoard({ result, animals, applicants, greedyViolations }: 
         Kyndra proposes. Staff decide. Every placement below is a proposal with its
         reasons attached, not a decision.
       </p>
+
+      <EquityDial value={equityWeight} onChange={onEquityWeightChange} animals={animals} />
 
       {/* ─── Assignments ─────────────────────────────────────────────── */}
       <h3 className="results__heading">Proposed placements</h3>
@@ -92,55 +108,13 @@ export function ResultsBoard({ result, animals, applicants, greedyViolations }: 
         ))}
       </ul>
 
-      {/* ─── Unmatched animals ───────────────────────────────────────── */}
-      <h3 className="results__heading">
-        Animals this cohort could not place ({result.unmatchedAnimals.length})
-      </h3>
-      {result.unmatchedAnimals.length === 0 ? (
-        <p className="results__note">Every animal in this cohort was placed.</p>
-      ) : (
-        <ul className="pairs">
-          {result.unmatchedAnimals.map((unmatched) => (
-            <li key={unmatched.animalId} className="pair pair--unmatched">
-              <div className="pair__head">
-                <strong>{animalName(unmatched.animalId)}</strong>
-                <span className="pair__tag">unmatched</span>
-              </div>
-              <p className="pair__ranks">
-                {unmatched.blockedBy.length} household
-                {unmatched.blockedBy.length === 1 ? '' : 's'} were eliminated by a hard
-                constraint.
-              </p>
-              <p className="pair__counterfactual">{unmatched.recruitmentProfile}</p>
-              <details className="pair__constraints">
-                <summary>Which constraint eliminated each household</summary>
-                <ul>
-                  {unmatched.blockedBy.map((blocked) => (
-                    <li key={blocked.applicantId}>
-                      {applicantName(blocked.applicantId)} — {blocked.failedConstraint}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* ─── Unmatched applicants ────────────────────────────────────── */}
-      <h3 className="results__heading">
-        Households not placed this round ({result.unmatchedApplicants.length})
-      </h3>
-      <ul className="pairs">
-        {result.unmatchedApplicants.map((unmatched) => (
-          <li key={unmatched.id} className="pair pair--unmatched">
-            <div className="pair__head">
-              <strong>{applicantName(unmatched.id)}</strong>
-            </div>
-            <p className="pair__ranks">{unmatched.reason}</p>
-          </li>
-        ))}
-      </ul>
+      {/* ─── Unmatched ───────────────────────────────────────────────── */}
+      <UnmatchedPanel
+        unmatchedAnimals={result.unmatchedAnimals}
+        unmatchedApplicants={result.unmatchedApplicants}
+        animalName={animalName}
+        applicants={applicants}
+      />
 
       {/* ─── Regret — the honest counterpart to stability ─────────────── */}
       <h3 className="results__heading">Is stable actually good?</h3>
@@ -150,6 +124,16 @@ export function ResultsBoard({ result, animals, applicants, greedyViolations }: 
         the worst-off household matched its #{result.regret.worstApplicantRank}. Mean
         animal rank {result.regret.meanAnimalRank.toFixed(2)}.
       </p>
+
+      {/* ─── Attempt a swap ──────────────────────────────────────────── */}
+      <SwapAttempt
+        cohort={cohort}
+        options={{ equityWeight }}
+        animals={animals}
+        applicants={applicants}
+        assignedAnimalIds={result.assignments.map((assignment) => assignment.animalId)}
+        assignedApplicantIds={result.assignments.map((assignment) => assignment.applicantId)}
+      />
     </section>
   );
 }

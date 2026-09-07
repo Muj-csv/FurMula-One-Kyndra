@@ -16,17 +16,15 @@ import { ApplicantIntake } from './components/ApplicantIntake';
 import { ResultsBoard } from './components/ResultsBoard';
 import './index.css';
 
-/** Equity is engine-complete in P0; the dial itself is P1-5. */
-const EQUITY_WEIGHT = 0.5;
-
 export function App() {
   const [cohort, setCohort] = useState<Cohort>(COHORT);
   const [hasRun, setHasRun] = useState(false);
   const [showIntake, setShowIntake] = useState(false);
+  const [equityWeight, setEquityWeight] = useState(0.5);
 
   const outcome = useMemo(
-    () => (hasRun ? compare(cohort, { equityWeight: EQUITY_WEIGHT }) : null),
-    [cohort, hasRun],
+    () => (hasRun ? compare(cohort, { equityWeight }) : null),
+    [cohort, hasRun, equityWeight],
   );
 
   const addApplicant = (applicant: Applicant) => {
@@ -96,9 +94,12 @@ export function App() {
       ) : (
         <ResultsBoard
           result={outcome.stable}
+          cohort={cohort}
           animals={cohort.animals}
           applicants={cohort.applicants}
           greedyViolations={outcome.greedy.constraintViolations}
+          equityWeight={equityWeight}
+          onEquityWeightChange={setEquityWeight}
         />
       )}
     </main>
