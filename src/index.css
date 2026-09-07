@@ -665,3 +665,30 @@ body {
   font-style: italic;
   color: var(--muted);
 }
+
+/* ─── Judge challenge ────────────────────────────────────────────────────── */
+
+.challenge {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  border: 2px solid var(--accent);
+  border-radius: 0.6rem;
+}
+
+.challenge__timer {
+  margin: 0.75rem 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.challenge__verdict {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.challenge__verdict--ok {
+  color: #1b7a3d;
+  font-weight: 600;
+}
