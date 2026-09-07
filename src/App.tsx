@@ -12,6 +12,7 @@ import { ASSUMPTION_CONSERVATIVE, compare, type Applicant, type Cohort } from '.
 import { COHORT, provenanceLabel } from './data/cohort';
 import { RESEARCH, COHORT_SIZING_NOTE } from './data/researchConstants';
 import { AnimalWall } from './components/AnimalWall';
+import { ConstraintGrid } from './components/ConstraintGrid';
 import { ApplicantIntake } from './components/ApplicantIntake';
 import { JudgeChallenge } from './components/JudgeChallenge';
 import { ResultsBoard } from './components/ResultsBoard';
@@ -98,7 +99,14 @@ export function App() {
 
       {outcome === null ? (
         <>
+          {/* PRD §8 beats 2 and 3, in order: the judge tries it by hand, then
+              sees the size of what they just attempted. The grid lived inside
+              the results board, which meant it could only be shown AFTER the
+              cohort had been run — the opposite of what the script does with
+              it. It is the argument for why hand-matching fails, so it has to
+              land before the machine has answered anything. */}
           <JudgeChallenge animals={cohort.animals} applicants={cohort.applicants} />
+          <ConstraintGrid animals={cohort.animals} applicants={cohort.applicants} />
           <AnimalWall animals={cohort.animals} title="Who is waiting" />
         </>
       ) : (
