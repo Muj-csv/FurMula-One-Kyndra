@@ -9,6 +9,11 @@
 
 import { useState } from 'react';
 import type { Animal, Applicant } from '../engine';
+import {
+  isSurveyCaptureEnabled,
+  submitSurveyResponse,
+  type ShareStatus,
+} from '../data/surveyCapture';
 
 type Level = 1 | 2 | 3 | 4 | 5;
 const LEVELS: Level[] = [1, 2, 3, 4, 5];
@@ -44,14 +49,35 @@ export function ApplicantIntake({
 }) {
   const [form, setForm] = useState<Applicant>(() => blankApplicant(nextId));
 
+  // P1-1 sharing. Opt-in, unticked by default: consent that arrives pre-ticked
+  // is not consent, and `surveyed: true` is the flag our headline claim rests
+  // on. The whole block disappears when no endpoint is configured.
+  const captureEnabled = isSurveyCaptureEnabled();
+  const [share, setShare] = useState(false);
+  const [status, setStatus] = useState<ShareStatus>('idle');
+
   const set = <K extends keyof Applicant>(key: K, value: Applicant[K]) =>
     setForm((previous) => ({ ...previous, [key]: value }));
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     const name = form.name.trim() === '' ? `Household ${nextId}` : form.name.trim();
-    onSubmit({ ...form, id: nextId, name });
+    const applicant: Applicant = { ...form, id: nextId, name };
+
+    // Local first, and unconditionally. The household enters the cohort and the
+    // engine re-runs whether or not the share is attempted, succeeds, or the
+    // visitor is offline — the demo path never waits on the network.
+    onSubmit(applicant);
     setForm(blankApplicant(nextId));
+
+    if (!captureEnabled || !share) {
+      setStatus('idle');
+      return;
+    }
+
+    setStatus('sharing');
+    void submitSurveyResponse(applicant).then(setStatus);
+    setShare(false);
   };
 
   return (
@@ -105,11 +131,11 @@ export function ApplicantIntake({
         </label>
 
         <label>
-          Hours away per day
+          Hours away per day (0–14)
           <input
             type="number"
             min={0}
-            max={16}
+            max={14}
             value={form.hoursAwayPerDay}
             onChange={(event) => set('hoursAwayPerDay', Number(event.target.value))}
           />
@@ -217,9 +243,52 @@ export function ApplicantIntake({
         ))}
       </div>
 
+      {captureEnabled ? (
+        <fieldset className="intake__consent">
+          <legend>Helping our research?</legend>
+          <p className="intake__hint">
+            Kyndra is a hackathon project and the animals above are{' '}
+            <strong>simulated</strong>. This is not an adoption application and you are not
+            applying for a real animal. Tick the box and the household details you just
+            entered are sent to our team, and may be shown as part of the demo cohort.
+            Leave it unticked and nothing leaves your browser.
+          </p>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={share}
+              onChange={(event) => setShare(event.target.checked)}
+            />
+            Share this household with the Kyndra team for our research cohort
+          </label>
+        </fieldset>
+      ) : null}
+
       <button type="submit" className="button">
         Add household
       </button>
+
+      {status === 'sharing' ? (
+        <p className="intake__status" role="status">
+          Sharing…
+        </p>
+      ) : null}
+      {status === 'sent' ? (
+        <p className="intake__status" role="status">
+          Sent — thank you.
+        </p>
+      ) : null}
+      {status === 'shared' ? (
+        <p className="intake__status" role="status">
+          Shared with the team — thank you.
+        </p>
+      ) : null}
+      {status === 'failed' ? (
+        <p className="intake__status intake__status--failed" role="status">
+          We could not reach the team, so this household was not shared. It still went into
+          the match below.
+        </p>
+      ) : null}
     </form>
   );
 }

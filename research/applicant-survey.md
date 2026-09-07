@@ -58,6 +58,95 @@ simulated cohort of animals — they are not applying to adopt a real animal.
 
 ---
 
+## Two ways to collect — pick one, both land in the same place
+
+**Route A — the deployed app.** Send people the Vercel URL. They open "Add
+a household", fill the real intake form, and tick *"Share this household
+with the Kyndra team for our research cohort"*. The submission is POSTed to
+a collector you own; export it as CSV and it feeds the converter below
+unchanged.
+
+Turning this on is one edit: paste the endpoint URL into `SURVEY_ENDPOINT`
+in `src/data/surveyCapture.ts`, set `SURVEY_TRANSPORT` to match it, and
+redeploy. **While that constant is empty the checkbox does not render at
+all** — a share box that silently drops data would be exactly the sort of
+claim PRD §3 forbids. Flip the expectation in
+`tests/survey-capture.test.ts` when you enable it.
+
+Either way the URL is a write-only collection address that ships in the
+client bundle, so it is not a secret: no env var, no serverless function,
+and Vercel still serves a pure static build.
+
+### A1 — Google Apps Script (recommended: no vendor, so nothing to paywall)
+
+**Zero cost by construction.** No signup, no card, no free-tier ceiling, and
+no third party who can change their pricing the week of the demo. Uses a
+Google account the team already has.
+
+1. New Google Sheet. Name the first tab `Responses`.
+2. Paste this as row 1, one header per cell — these are exactly the columns
+   `csv-to-applicants.mjs` requires, so the export needs no editing:
+
+   ```
+   name  specificAnimalId  homeType  hasYard  hoursAwayPerDay  hasChildren
+   hasOtherPets  experience  canDoDailyMeds  maxSizeKg  prefersSpecies
+   prefersAge  prefersEnergy  submittedAt
+   ```
+
+3. **Extensions → Apps Script**, and paste:
+
+   ```js
+   function doPost(e) {
+     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Responses');
+     const data = JSON.parse(e.postData.contents);
+     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+     sheet.appendRow(headers.map((h) => (data[h] === undefined ? '' : data[h])));
+     return ContentService.createTextOutput('ok');
+   }
+   ```
+
+4. **Deploy → New deployment → Web app.** Execute as *Me*; Who has access
+   *Anyone*. Copy the `/exec` URL.
+5. Put that URL in `SURVEY_ENDPOINT` and leave `SURVEY_TRANSPORT` as
+   `'beacon'`. Deploy. **File → Download → CSV** gives the converter its
+   input.
+
+**The one trade-off.** Apps Script returns no CORS headers, so the browser
+cannot read the response. The app therefore says *"Sent — thank you"* and
+never claims the row was written. Watch the Sheet fill up as you send the
+link out — that, not the UI, is your confirmation. If the first test
+submission does not appear, the usual cause is step 4: access must be
+*Anyone*, not *Anyone with a Google account*.
+
+### A2 — a hosted form service (if you would rather not touch Apps Script)
+
+Free tiers with **no credit card**, verified September 2026: **Formspree**
+(50 submissions/month), **Basin** (~100–500/month depending on plan
+details), **Getform** (~50/month). Any of them covers ~20 responses. Set
+`SURVEY_TRANSPORT` to `'json'` for these — they return CORS headers, so
+the app can confirm receipt and will say *"Shared with the team"* instead of
+*"Sent"*.
+
+*(Formspark is **not** in this list: it is paid-only, around $25 one-time.
+Do not use it for this project.)*
+
+**Route B — a Google Form (zero code, the fallback).** Rebuild the twelve
+questions above as a Form with column headers matching
+`research/templates/applicant-survey-template.csv`, and export to CSV.
+Use this if the endpoint wiring is eating time you do not have. Getting
+twenty responses matters more than which instrument collected them.
+
+**The consent rule either way.** Respondents must be told, before they
+answer, that this is a hackathon project on a simulated cohort and that
+they are not applying to adopt a real animal. Route A puts that disclosure
+next to the checkbox. Route B needs it in the form's description — do not
+rely on having said it in the message you sent.
+
+**And the flag.** `surveyed: true` belongs only on a record from someone
+who deliberately opted in. Judges and passers-by testing the live app add
+households too; those stay in their own browser session and never reach
+you, which is the point. Review every record before committing it.
+
 ## Converting responses into cohort records — the fast way
 
 Collect responses into a CSV matching
