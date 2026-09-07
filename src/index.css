@@ -1,0 +1,75 @@
+/* Plain CSS — Architecture §2: "Tailwind or plain CSS. Either. Don't spend
+   time here." Zero extra dependencies.
+
+   Presentation constraints (Architecture §8) are requirements, not taste:
+   large type, high contrast, few elements per screen, legible at a quarter
+   of a Zoom screen share. */
+
+:root {
+  --ink: #10241d;
+  --paper: #f7f5f0;
+  --muted: #55665f;
+  --accent: #1b3a2f;
+
+  color-scheme: light dark;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #eef2f0;
+    --paper: #10241d;
+    --muted: #9db3aa;
+    --accent: #cfe3d9;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.shell {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.shell__header h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.shell__tagline {
+  margin: 0.25rem 0 0;
+  font-size: 1.25rem;
+  color: var(--muted);
+}
+
+.shell__status {
+  margin-top: 2.5rem;
+  padding: 1.25rem 1.5rem;
+  border: 2px solid var(--accent);
+  border-radius: 0.5rem;
+}
+
+.shell__note,
+.placeholder__note {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.placeholder {
+  padding: 1rem 1.25rem;
+  border: 1px dashed var(--muted);
+  border-radius: 0.5rem;
+}

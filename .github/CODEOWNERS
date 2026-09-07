@@ -1,0 +1,10 @@
+# Engine ownership — PRD §7, Architecture §3.
+#
+# `src/engine/` has a SINGLE OWNER. Nobody else commits there.
+#
+# ACTION REQUIRED (Day 1): replace the placeholder below with the GitHub
+# handle of the team's strongest algorithms member, then uncomment it.
+# Left inactive rather than pointing at a guessed handle.
+#
+# /src/engine/  @github-handle-here
+# /tests/       @github-handle-here
