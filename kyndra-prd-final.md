@@ -314,15 +314,23 @@ Two people can ship P0. Four makes it comfortable. **One person owns the engine 
 
 ## Demo script (7 min + 3 Q&A)
 
+> **Verified against real engine output, Mon 8 Sept (Day 3).** Every number
+> below is read off `npm test` or the running app, not estimated. The cohort
+> claims in steps 6, 8 and 9 are pinned by `tests/narrative.test.ts`: if a beat
+> stops being true, that suite goes red. **Re-verify after any edit to
+> `src/data/cohort.ts`.** Two beats still carry a placeholder — step 6's human
+> baseline (`N`, P1-2 not yet run) and step 1's photo (`photo: ''` on every
+> animal, Day 1 item still open).
+
 1. **0:00** Meet Bruno. 340 days. One photo, one sentence.
 2. **0:30** **Hand it to the judge.** "Place these four animals. Two-minute timer." Let them try.
-3. **1:30** Reveal what they got wrong, with citations. **Then the constraint grid** — 15 × 40 = 600 pairwise judgements. That's why this fails under time pressure.
+3. **1:30** Reveal what they got wrong, with citations. **Then the constraint grid** — this cohort is **16 × 22 = 352** pairwise judgements in a single image, and a real Saturday (15 animals, 40 applications) is 600. That's why this fails under time pressure.
 4. **2:15** The stakes — Powell 2021: 16.3% returned, 35% behavioural, 18% household-pet conflict. **Then the compounding loss (Powell 2022): ~9 in 10 of those adopters never adopt again.**
 5. **3:00** Reframe: two-sided matching. Nobody hand-ranks — we ask if you came for a specific animal, derive the rest.
-6. **3:45** Run the cohort. Bruno unmatched under greedy — show why. **Then the human baseline: five people, N violations. Ours: zero, across 500 randomised cohorts too.**
+6. **3:45** Run the cohort, dial at its floor. **First-come-first-served does not strand Bruno — it places him**, into a household with another pet, no quiet, and over its size limit: three hard constraints at once, a return already in motion. Five such violations across that board. **Kyndra refuses the placement and leaves him unmatched instead** — then tells you who to recruit. **Then the human baseline: five people, N violations. Ours: zero, here and across 500 randomised cohorts.**
 7. **4:45** **"Attempt a swap."** Hand it back to the judge. Watch it fail, with the reason.
-8. **5:15** **Slide the equity dial.** Bruno matches. State the guardrail unprompted — ties only, never over a hard constraint — and point at the test that proves it.
-9. **5:50** **Unmatched panel:** "These two matched nobody. Here's the adopter profile you need to recruit."
+8. **5:15** **Slide the equity dial.** At **0.30** Bruno matches — Household 03 — and six placements rearrange around him. State the guardrail unprompted, in these words: the dial reorders **within a bounded band of preference, never across a hard constraint**. Not "ties only" — `engine/equity.ts` is explicit that the band is wider than an exact tie, and overstating it is the one claim here a judge could actually catch. Point at property test 2, which proves the constraint half on 500 randomised cohorts, and at `narrative.test.ts`, which proves the two households who came for an animal by name keep it at **every** dial setting.
+9. **5:50** **Unmatched panel:** Ember — 415 days, the longest wait in the cohort, and **zero** of the 22 households can legally take her. "Nobody turned Ember down. Nobody qualifies. Here is the adopter profile you need to recruit." Read the generated profile straight off the screen — 52kg, yard, quiet home, daily medication, experienced adopter.
 10. **6:20** **The stability slide** — JAMA 2025, 78.4% vs 70.9%. Why stability still wins here.
 11. **6:45** What's real, what's simulated, what's next. Close on the frame: transparent, explainable allocation in a domain where such systems are usually absent or opaque. Close on Bruno.
 
