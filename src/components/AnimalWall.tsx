@@ -3,11 +3,11 @@
 //
 // P0-1: animal profiles — requirements, days-in-shelter, name, photo.
 
+import { useState } from 'react';
 import type { Animal } from '../engine';
-
-function initials(name: string): string {
-  return name.slice(0, 1).toUpperCase();
-}
+import { AnimalAvatar } from './AnimalAvatar';
+import { PhotoCredits } from './PhotoCredits';
+import { hasCreditedPhoto } from '../data/photoCredits';
 
 /** The requirements a coordinator has to hold in their head for this animal. */
 function requirements(animal: Animal): string[] {
@@ -25,15 +25,26 @@ function requirements(animal: Animal): string[] {
 export function AnimalCard({ animal, selected }: { animal: Animal; selected?: boolean }) {
   const longStay = animal.daysInShelter >= 180;
 
+  // A path that 404s renders as a broken-image glyph, which is the one outcome
+  // worse than having no photograph at all — and it would happen live, on a
+  // projector, with no way to fix it. If the image fails for any reason, the
+  // card silently falls back to the tinted initial.
+  const [imageFailed, setImageFailed] = useState(false);
+  const showPhoto = hasCreditedPhoto(animal.id, animal.photo) && !imageFailed;
+
   return (
     <article className={`animal${selected === true ? ' animal--selected' : ''}`}>
       <div className="animal__head">
-        {animal.photo === '' ? (
-          <div className="animal__avatar" aria-hidden="true">
-            {initials(animal.name)}
-          </div>
+        {showPhoto ? (
+          <img
+            className="animal__photo"
+            src={animal.photo}
+            alt=""
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
-          <img className="animal__photo" src={animal.photo} alt="" />
+          <AnimalAvatar id={animal.id} name={animal.name} />
         )}
         <div>
           <h3 className="animal__name">{animal.name}</h3>
@@ -72,6 +83,9 @@ export function AnimalWall({ animals, title }: { animals: Animal[]; title?: stri
           <AnimalCard key={animal.id} animal={animal} />
         ))}
       </div>
+
+      {/* Renders nothing while every animal uses a generated portrait. */}
+      <PhotoCredits animals={animals} />
     </section>
   );
 }

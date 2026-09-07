@@ -151,13 +151,40 @@ body {
   object-fit: cover;
 }
 
+/* --avatar-hue is set inline, per animal, by AnimalAvatar.tsx. Only the
+   LIGHTNESS is decided here, and it has to flip with the theme: the letter is
+   var(--paper), which is near-white in light mode and near-black in dark, so a
+   single fixed disc lightness would fail contrast in one of them. */
 .animal__avatar {
   display: grid;
   place-items: center;
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--paper);
-  background: var(--accent);
+  background: hsl(var(--avatar-hue, 152) 30% 34%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .animal__avatar {
+    background: hsl(var(--avatar-hue, 152) 32% 74%);
+  }
+}
+
+.credits {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+}
+
+.credits__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.credits__list li {
+  margin-bottom: 0.25rem;
 }
 
 .animal__name {
