@@ -13,12 +13,23 @@ import { UnmatchedPanel } from './UnmatchedPanel';
 import { EquityDial } from './EquityDial';
 import { SwapAttempt } from './SwapAttempt';
 import { GreedyStableTransition } from './GreedyStableTransition';
-import { ConstraintGrid } from './ConstraintGrid';
 import { WhyNotPanel } from './WhyNotPanel';
 import { RegretView } from './RegretView';
 import { ImpactPanel } from './ImpactPanel';
 import { HumanBaselinePanel } from './HumanBaselinePanel';
 import { baselineComparison } from '../data/humanBaseline';
+
+// ─── SECTION ORDER IS THE DEMO SCRIPT ORDER ────────────────────────────────
+//
+// PRD §8's beats run 6 (run the cohort) → 7 (attempt a swap) → 8 (slide the
+// dial) → 9 (unmatched) → 10 (is stable good?). This file used to render the
+// dial first and the swap last, so presenting it meant scrolling up and down
+// mid-sentence on a 7-minute clock. The order below matches the script, and
+// the constraint grid moved to the landing page because it is beat 3 — it is
+// shown BEFORE the cohort is ever run.
+//
+// If you reorder these, reorder the script too, or the next person to rehearse
+// will lose forty seconds hunting for a panel.
 
 interface Props {
   result: MatchResult;
@@ -78,13 +89,6 @@ export function ResultsBoard({
         reasons attached, not a decision.
       </p>
 
-      <EquityDial
-        value={equityWeight}
-        onChange={onEquityWeightChange}
-        animals={animals}
-        applicants={applicants}
-      />
-
       {/* ─── Greedy → stable ─────────────────────────────────────────── */}
       <GreedyStableTransition greedy={greedy} stable={result} animals={animals} applicants={applicants} />
 
@@ -105,6 +109,30 @@ export function ResultsBoard({
           ),
           greedy.constraintViolations,
         )}
+      />
+
+      {/* ─── Can I break it? — PRD §8 step 7 ─────────────────────────
+          Before the dial, because the script hands the board to the judge to
+          attack while it is still at pure want. */}
+      <SwapAttempt
+        cohort={cohort}
+        options={{ equityWeight }}
+        animals={animals}
+        applicants={applicants}
+        assignedAnimalIds={result.assignments.map((assignment) => assignment.animalId)}
+        assignedApplicantIds={result.assignments.map((assignment) => assignment.applicantId)}
+      />
+
+      {/* ─── The dial — PRD §8 step 8 ────────────────────────────────────
+          Sits DIRECTLY above the placements it rewrites. It used to be the
+          first thing on the board, which meant sliding it and then scrolling
+          down to find out what moved. Bruno appearing is the hero beat; it
+          has to happen in one screen. */}
+      <EquityDial
+        value={equityWeight}
+        onChange={onEquityWeightChange}
+        animals={animals}
+        applicants={applicants}
       />
 
       {/* ─── Assignments ─────────────────────────────────────────────── */}
@@ -154,9 +182,6 @@ export function ResultsBoard({
         ))}
       </ul>
 
-      {/* ─── How big is this really? ─────────────────────────────────── */}
-      <ConstraintGrid animals={animals} applicants={applicants} />
-
       {/* ─── Why not the others? ─────────────────────────────────────── */}
       <WhyNotPanel animals={animals} applicants={applicants} />
 
@@ -176,16 +201,6 @@ export function ResultsBoard({
         impact={impact}
         assumptionLevel={assumptionLevel}
         onAssumptionLevelChange={onAssumptionLevelChange}
-      />
-
-      {/* ─── Attempt a swap ──────────────────────────────────────────── */}
-      <SwapAttempt
-        cohort={cohort}
-        options={{ equityWeight }}
-        animals={animals}
-        applicants={applicants}
-        assignedAnimalIds={result.assignments.map((assignment) => assignment.animalId)}
-        assignedApplicantIds={result.assignments.map((assignment) => assignment.applicantId)}
       />
     </section>
   );

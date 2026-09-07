@@ -607,6 +607,13 @@ body {
   text-align: left;
   white-space: nowrap;
   font-weight: 600;
+  /* Pinned, so scrolling the grid sideways never leaves a row of ticks with
+     no animal attached to it. Needs its own background or the cells scroll
+     underneath it, and a z-index or the borders draw on top. */
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--paper);
 }
 
 .constraint-grid__col span {
@@ -718,4 +725,78 @@ body {
 .challenge__verdict--ok {
   color: #1b7a3d;
   font-weight: 600;
+}
+
+/* ─── Full-bleed constraint grid ──────────────────────────────────────────
+   PRD §8 beat 3 wants "352 pairwise judgements in one image" to land as a
+   WALL. Inside the 46rem reading column it renders as a cramped table with a
+   horizontal scrollbar, which reads as a spreadsheet and makes the opposite
+   point. This breaks it out to the full viewport width on wide screens, while
+   the surrounding prose stays in the column where it is readable.
+
+   The 100vw trick needs the scrollbar accounted for, hence the max() guard —
+   without it the page gains a horizontal scrollbar of its own. */
+/* 66rem, not 52rem. The table's natural width is ~990px, so below roughly
+   this the full-bleed negative margin pushes its left edge off-screen and the
+   animal-name column gets clipped — which is strictly worse than the plain
+   in-column scroll, since a row of ticks with no name is unreadable. Above it,
+   the whole 352-cell wall fits at once, which is the entire point of beat 3.
+   Verified at 900px (clipped) and 1440px (fits). */
+@media (min-width: 66rem) {
+  .grid-section .grid-wrap {
+    width: calc(100vw - 2rem);
+    max-width: calc(100vw - 2rem);
+    margin-left: calc(50% - 50vw + 1rem);
+    margin-right: calc(50% - 50vw + 1rem);
+    display: flex;
+    justify-content: center;
+  }
+
+  .grid-section .constraint-grid {
+    font-size: 0.9rem;
+  }
+}
+
+/* ─── The opening beat ────────────────────────────────────────────────────
+   One animal, given room, before any algorithm appears. Deliberately the
+   largest thing on the landing page: PRD §8 opens and closes on this animal,
+   and the previous layout gave them the same weight as fifteen others. */
+.throughline {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin: 1.5rem 0 2rem;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+  border-radius: 0.75rem;
+}
+
+/* Scales the shared avatar up without touching its own rule, so the wall and
+   the hero cannot drift apart. */
+.throughline__portrait .animal__avatar {
+  width: 5.5rem;
+  height: 5.5rem;
+  font-size: 2.6rem;
+}
+
+.throughline__name {
+  margin: 0 0 0.35rem;
+  font-size: 2.1rem;
+  line-height: 1.1;
+}
+
+.throughline__line {
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+}
+
+.throughline__stat {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (max-width: 34rem) {
+  .throughline {
+    flex-direction: column;
+  }
 }
