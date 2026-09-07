@@ -13,6 +13,7 @@ import { COHORT, provenanceLabel } from './data/cohort';
 import { RESEARCH, COHORT_SIZING_NOTE } from './data/researchConstants';
 import { AnimalWall } from './components/AnimalWall';
 import { ApplicantIntake } from './components/ApplicantIntake';
+import { JudgeChallenge } from './components/JudgeChallenge';
 import { ResultsBoard } from './components/ResultsBoard';
 import './index.css';
 
@@ -91,7 +92,10 @@ export function App() {
       ) : null}
 
       {outcome === null ? (
-        <AnimalWall animals={cohort.animals} title="Who is waiting" />
+        <>
+          <JudgeChallenge animals={cohort.animals} applicants={cohort.applicants} />
+          <AnimalWall animals={cohort.animals} title="Who is waiting" />
+        </>
       ) : (
         <ResultsBoard
           result={outcome.stable}
