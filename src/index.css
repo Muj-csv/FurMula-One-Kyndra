@@ -756,3 +756,47 @@ body {
     font-size: 0.9rem;
   }
 }
+
+/* ─── The opening beat ────────────────────────────────────────────────────
+   One animal, given room, before any algorithm appears. Deliberately the
+   largest thing on the landing page: PRD §8 opens and closes on this animal,
+   and the previous layout gave them the same weight as fifteen others. */
+.throughline {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin: 1.5rem 0 2rem;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+  border-radius: 0.75rem;
+}
+
+/* Scales the shared avatar up without touching its own rule, so the wall and
+   the hero cannot drift apart. */
+.throughline__portrait .animal__avatar {
+  width: 5.5rem;
+  height: 5.5rem;
+  font-size: 2.6rem;
+}
+
+.throughline__name {
+  margin: 0 0 0.35rem;
+  font-size: 2.1rem;
+  line-height: 1.1;
+}
+
+.throughline__line {
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+}
+
+.throughline__stat {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (max-width: 34rem) {
+  .throughline {
+    flex-direction: column;
+  }
+}

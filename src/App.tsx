@@ -13,6 +13,7 @@ import { COHORT, provenanceLabel } from './data/cohort';
 import { RESEARCH, COHORT_SIZING_NOTE } from './data/researchConstants';
 import { AnimalWall } from './components/AnimalWall';
 import { ConstraintGrid } from './components/ConstraintGrid';
+import { ThroughLine } from './components/ThroughLine';
 import { ApplicantIntake } from './components/ApplicantIntake';
 import { JudgeChallenge } from './components/JudgeChallenge';
 import { ResultsBoard } from './components/ResultsBoard';
@@ -63,17 +64,14 @@ export function App() {
         {provenanceLabel(cohort)} {COHORT_SIZING_NOTE}
       </p>
 
-      <section className="shell__status">
-        <p>
-          <strong>{RESEARCH.dogReturnRate.label}.</strong>{' '}
-          {RESEARCH.behaviouralShareOfReturns.label};{' '}
-          {RESEARCH.householdPetConflictShare.label}. These are compatibility failures,
-          not bad luck — and {RESEARCH.readoptionRate.label.toLowerCase()}.
-        </p>
-        <p className="shell__note">
-          {RESEARCH.dogReturnRate.source} · {RESEARCH.readoptionRate.source}
-        </p>
-      </section>
+      {/* ─── PRD §8 beat 1 ───────────────────────────────────────────────
+          One animal, one sentence, before anything else on the page. The demo
+          opens here and closes here (step 11), so this cannot be the seventh
+          thing a judge scrolls past. Only rendered on the landing state — once
+          the board is up, the board is the subject. */}
+      {outcome === null ? (
+        <ThroughLine animals={cohort.animals} applicants={cohort.applicants} />
+      ) : null}
 
       <div className="actions">
         <button type="button" className="button button--primary" onClick={() => setHasRun(true)}>
@@ -107,6 +105,24 @@ export function App() {
               land before the machine has answered anything. */}
           <JudgeChallenge animals={cohort.animals} applicants={cohort.applicants} />
           <ConstraintGrid animals={cohort.animals} applicants={cohort.applicants} />
+
+          {/* PRD §8 beat 4 — the stakes, AFTER the judge has failed at it by
+              hand and seen the scale. Leading with the statistics asks someone
+              to care about a percentage before they have met an animal or
+              understood the problem; this way the number lands as the
+              explanation for what they just experienced. */}
+          <section className="shell__status">
+            <p>
+              <strong>{RESEARCH.dogReturnRate.label}.</strong>{' '}
+              {RESEARCH.behaviouralShareOfReturns.label};{' '}
+              {RESEARCH.householdPetConflictShare.label}. These are compatibility
+              failures, not bad luck — and {RESEARCH.readoptionRate.label.toLowerCase()}.
+            </p>
+            <p className="shell__note">
+              {RESEARCH.dogReturnRate.source} · {RESEARCH.readoptionRate.source}
+            </p>
+          </section>
+
           <AnimalWall animals={cohort.animals} title="Who is waiting" />
         </>
       ) : (
