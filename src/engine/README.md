@@ -27,8 +27,8 @@ Wednesday-night UI rewrite cannot break correctness.
 - Tests are written **alongside** the algorithm, never after it
   (Architecture §7).
 
-## Status: Phase 0
+## Status: implemented
 
-Every module here is a signature-only stub that **throws**. This is deliberate.
-A stub that returns a plausible fake result is worse than a stub that throws.
-The pipeline (Architecture §6) is P0 work.
+The full pipeline (Architecture §6) is in place and both property tests pass.
+Nothing here stubs or throws any more. Run `npm test` for the property tests
+and the 500-cohort aggregate.

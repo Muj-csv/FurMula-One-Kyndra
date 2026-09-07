@@ -266,6 +266,38 @@ body {
   gap: 0.4rem;
 }
 
+/* Consent block — deliberately quieter than the form it follows. It is a
+   disclosure, not a call to action, and must never read as a nudge. */
+
+.intake__consent {
+  margin: 1rem 0;
+  padding: 0.9rem;
+  border: 1px dashed var(--muted);
+  border-radius: 0.4rem;
+}
+
+.intake__consent legend {
+  padding: 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.intake__consent .check {
+  font-size: 0.9rem;
+}
+
+.intake__status {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* A failed share is stated in words as well as colour — Architecture §8. */
+.intake__status--failed {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 /* ─── Results ───────────────────────────────────────────────────────────── */
 
 .results__summary {

@@ -1,0 +1,65 @@
+// Not an engine test — this guards the seam between the deployed intake form
+// and scripts/csv-to-applicants.mjs (PRD P1-1).
+//
+// The failure this exists to prevent: twenty real households submit through
+// the live app, the export comes back on Day 4, and the converter rejects it
+// because a field was renamed on one side of the seam and not the other. By
+// then the responses are collected and the people have moved on.
+//
+// So the header list is read out of the converter itself rather than
+// duplicated here. Change either side without the other and this fails.
+
+import { describe, it, expect } from 'vitest';
+import converterSource from '../scripts/csv-to-applicants.mjs?raw';
+import { buildSurveyPayload, isSurveyCaptureEnabled } from '../src/data/surveyCapture';
+import { APPLICANTS } from '../src/data/cohort';
+
+function converterHeaders(): string[] {
+  const body = /const REQUIRED_HEADERS = \[([\s\S]*?)\];/.exec(converterSource)?.[1];
+  if (body === undefined) throw new Error('REQUIRED_HEADERS not found in csv-to-applicants.mjs');
+  return [...body.matchAll(/'([^']+)'/g)]
+    .map((match) => match[1])
+    .filter((header): header is string => header !== undefined);
+}
+
+const sample = APPLICANTS[0];
+if (sample === undefined) throw new Error('cohort has no applicants to shape a payload from');
+
+describe('survey capture and the CSV converter agree', () => {
+  const payload = buildSurveyPayload(sample);
+
+  it('sends every column the converter requires, in the same order', () => {
+    const required = converterHeaders();
+    expect(required.length).toBeGreaterThan(0);
+    expect(Object.keys(payload).slice(0, required.length)).toEqual(required);
+  });
+
+  it('never sends id or surveyed — the converter owns both', () => {
+    expect(Object.keys(payload)).not.toContain('id');
+    expect(Object.keys(payload)).not.toContain('surveyed');
+  });
+
+  it('encodes booleans as yes/no and absent preferences as blank', () => {
+    const noPreferences = buildSurveyPayload({
+      ...sample,
+      hasYard: true,
+      hasChildren: false,
+      specificAnimalId: null,
+      prefersSpecies: null,
+      prefersAge: null,
+      prefersEnergy: null,
+    });
+    expect(noPreferences.hasYard).toBe('yes');
+    expect(noPreferences.hasChildren).toBe('no');
+    expect(noPreferences.specificAnimalId).toBe('');
+    expect(noPreferences.prefersSpecies).toBe('');
+    expect(noPreferences.prefersAge).toBe('');
+    expect(noPreferences.prefersEnergy).toBe('');
+  });
+
+  it('stays disabled until an endpoint is configured', () => {
+    // Flips the moment SURVEY_ENDPOINT is set in src/data/surveyCapture.ts.
+    // Updating this expectation is the deliberate act of turning capture on.
+    expect(isSurveyCaptureEnabled()).toBe(false);
+  });
+});
