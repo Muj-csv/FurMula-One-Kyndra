@@ -221,6 +221,49 @@ describe('attempt a swap', () => {
   });
 });
 
+// ─── Rank fields mean what the UI says they mean ───────────────────────────
+//
+// An Assignment carries two ranks that are easy to mistake for each other:
+//
+//   shelterRankOfApplicant — where the ANIMAL ranked the household it got
+//   applicantRankOfAnimal  — where the HOUSEHOLD ranked the animal
+//
+// RegretView renders `regret.worstAnimalRank` as a headline number and then
+// names the worst-off animal by scanning the assignments itself. Those two
+// have to be the same number. They were not: the component read the
+// household-side field under an animal-side label, and the panel shipped
+// showing "worst matched rank, animal side: 12" above "the worst-off animal
+// ... matched its #5 choice". Pinning the correspondence here is what makes
+// that class of mix-up a test failure instead of a slide a judge reads aloud.
+
+describe('rank field semantics', () => {
+  it('lines the assignment rank fields up with computeRegret, on both sides', () => {
+    for (let seed = 0; seed < 200; seed++) {
+      const cohort = randomCohort(seed);
+      const result = runMatch(cohort, { equityWeight: randomWeight(seed) });
+      if (result.assignments.length === 0) continue;
+
+      const animalSide = Math.max(
+        ...result.assignments.map((a) => a.shelterRankOfApplicant),
+      );
+      const householdSide = Math.max(
+        ...result.assignments.map((a) => a.applicantRankOfAnimal),
+      );
+
+      expect({ seed, animalSide, householdSide }).toEqual({
+        seed,
+        animalSide: result.regret.worstAnimalRank,
+        householdSide: result.regret.worstApplicantRank,
+      });
+
+      const meanAnimal =
+        result.assignments.reduce((sum, a) => sum + a.shelterRankOfApplicant, 0) /
+        result.assignments.length;
+      expect(meanAnimal).toBeCloseTo(result.regret.meanAnimalRank, 10);
+    }
+  });
+});
+
 // ─── Boundary ──────────────────────────────────────────────────────────────
 
 describe('engine boundary', () => {

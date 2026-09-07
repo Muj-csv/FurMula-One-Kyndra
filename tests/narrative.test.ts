@@ -225,3 +225,53 @@ describe('demo script — the figures PRD §8 says out loud', () => {
     expect(brunoPair?.failed).toHaveLength(3);
   });
 });
+
+// ─── CLAIM 4 — the regret panel does not contradict itself ─────────────────
+//
+// engine.test.ts pins what the two rank fields MEAN. It cannot catch a
+// component reading the wrong one — which is exactly what shipped: the panel
+// showed "worst matched rank, animal side: 12" directly above "the worst-off
+// animal ... matched its #5 choice". This pins the numbers the judge actually
+// sees on the demo cohort, so the headline and the sentence must agree.
+
+describe('demo claim — the regret panel is internally consistent', () => {
+  it('names a worst-off animal whose rank equals the headline tile', () => {
+    for (const equityWeight of [0, 0.3, 1]) {
+      const result = runMatch(COHORT, { equityWeight });
+
+      // The same selection RegretView makes, on the same field it must read.
+      const worst = [...result.assignments].sort(
+        (a, b) => b.shelterRankOfApplicant - a.shelterRankOfApplicant,
+      )[0];
+      expect(worst).toBeDefined();
+      if (worst === undefined) continue;
+
+      expect({ equityWeight, sentence: worst.shelterRankOfApplicant }).toEqual({
+        equityWeight,
+        sentence: result.regret.worstAnimalRank,
+      });
+    }
+  });
+
+  it('keeps the two first-choice tiles on their own sides of the match', () => {
+    // The panel now shows both figures side by side, and they are wildly
+    // different — which is the point, but it also means a swap between them
+    // would look entirely plausible on screen. This pins each to its own side.
+    //
+    // Animal side: only Sable got its top-ranked household. Household side:
+    // most households did get the animal they wanted most. Reading either
+    // number under the other's label is the bug that shipped once already.
+    const result = runMatch(COHORT, { equityWeight: 0.3 });
+
+    const animalSide = result.assignments.filter((a) => a.shelterRankOfApplicant === 1);
+    expect(animalSide).toHaveLength(1);
+    expect(nameOf(animalSide[0]?.animalId as string)).toBe('Sable');
+
+    const householdSide = result.assignments.filter((a) => a.applicantRankOfAnimal === 1);
+    expect(householdSide).toHaveLength(9);
+
+    // If these two ever come out equal the tiles have almost certainly been
+    // wired to the same field again.
+    expect(animalSide.length).not.toBe(householdSide.length);
+  });
+});
