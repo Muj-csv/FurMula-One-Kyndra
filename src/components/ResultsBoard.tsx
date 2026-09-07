@@ -7,19 +7,27 @@
 // Match quality is never encoded in colour alone (Architecture §8): every
 // state carries a word.
 
-import type { Animal, Applicant, Cohort, MatchResult } from '../engine';
+import type { Animal, Applicant, Cohort, GreedyResult, ImpactModel, MatchResult } from '../engine';
 import { UnmatchedPanel } from './UnmatchedPanel';
 import { EquityDial } from './EquityDial';
 import { SwapAttempt } from './SwapAttempt';
+import { GreedyStableTransition } from './GreedyStableTransition';
+import { ConstraintGrid } from './ConstraintGrid';
+import { WhyNotPanel } from './WhyNotPanel';
+import { RegretView } from './RegretView';
+import { ImpactPanel } from './ImpactPanel';
 
 interface Props {
   result: MatchResult;
   cohort: Cohort;
   animals: Animal[];
   applicants: Applicant[];
-  greedyViolations: number;
+  greedy: GreedyResult;
+  impact: ImpactModel;
   equityWeight: number;
   onEquityWeightChange: (value: number) => void;
+  assumptionLevel: number;
+  onAssumptionLevelChange: (value: number) => void;
 }
 
 export function ResultsBoard({
@@ -27,9 +35,12 @@ export function ResultsBoard({
   cohort,
   animals,
   applicants,
-  greedyViolations,
+  greedy,
+  impact,
   equityWeight,
   onEquityWeightChange,
+  assumptionLevel,
+  onAssumptionLevelChange,
 }: Props) {
   const animalName = (id: string) => animals.find((a) => a.id === id)?.name ?? id;
   const applicantName = (id: string) => applicants.find((p) => p.id === id)?.name ?? id;
@@ -48,7 +59,7 @@ export function ResultsBoard({
           <span className="stat__label">hard-constraint violations</span>
         </div>
         <div className="stat">
-          <span className="stat__value">{greedyViolations}</span>
+          <span className="stat__value">{greedy.constraintViolations}</span>
           <span className="stat__label">violations if placed first-come-first-served</span>
         </div>
         <div className="stat">
@@ -65,6 +76,9 @@ export function ResultsBoard({
       </p>
 
       <EquityDial value={equityWeight} onChange={onEquityWeightChange} animals={animals} />
+
+      {/* ─── Greedy → stable ─────────────────────────────────────────── */}
+      <GreedyStableTransition greedy={greedy} stable={result} animals={animals} applicants={applicants} />
 
       {/* ─── Assignments ─────────────────────────────────────────────── */}
       <h3 className="results__heading">Proposed placements</h3>
@@ -92,7 +106,12 @@ export function ResultsBoard({
               ))}
             </ul>
 
-            <p className="pair__counterfactual">{assignment.counterfactual}</p>
+            <p className="pair__counterfactual">
+              <span className="pair__counterfactual-trigger" tabIndex={0}>
+                What if this pairing hadn't happened? (hover)
+              </span>
+              <span className="pair__counterfactual-text">{assignment.counterfactual}</span>
+            </p>
 
             <details className="pair__constraints">
               <summary>
@@ -108,6 +127,12 @@ export function ResultsBoard({
         ))}
       </ul>
 
+      {/* ─── How big is this really? ─────────────────────────────────── */}
+      <ConstraintGrid animals={animals} applicants={applicants} />
+
+      {/* ─── Why not the others? ─────────────────────────────────────── */}
+      <WhyNotPanel animals={animals} applicants={applicants} />
+
       {/* ─── Unmatched ───────────────────────────────────────────────── */}
       <UnmatchedPanel
         unmatchedAnimals={result.unmatchedAnimals}
@@ -117,13 +142,14 @@ export function ResultsBoard({
       />
 
       {/* ─── Regret — the honest counterpart to stability ─────────────── */}
-      <h3 className="results__heading">Is stable actually good?</h3>
-      <p className="results__note">
-        Stability means nobody would defect. It does not mean everybody got their first
-        choice. The worst-off animal matched its #{result.regret.worstAnimalRank} choice;
-        the worst-off household matched its #{result.regret.worstApplicantRank}. Mean
-        animal rank {result.regret.meanAnimalRank.toFixed(2)}.
-      </p>
+      <RegretView result={result} animalName={animalName} />
+
+      {/* ─── What is this worth? ─────────────────────────────────────── */}
+      <ImpactPanel
+        impact={impact}
+        assumptionLevel={assumptionLevel}
+        onAssumptionLevelChange={onAssumptionLevelChange}
+      />
 
       {/* ─── Attempt a swap ──────────────────────────────────────────── */}
       <SwapAttempt

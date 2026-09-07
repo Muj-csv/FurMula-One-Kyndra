@@ -478,3 +478,190 @@ body {
   border-left-color: #b3261e;
   background: color-mix(in srgb, #b3261e 10%, transparent);
 }
+
+/* ─── Counterfactual on hover ───────────────────────────────────────────── */
+
+.pair__counterfactual-trigger {
+  cursor: help;
+  font-style: italic;
+  border-bottom: 1px dotted var(--muted);
+}
+
+.pair__counterfactual-text {
+  display: block;
+  margin-top: 0.35rem;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: opacity 200ms ease, max-height 200ms ease;
+}
+
+.pair__counterfactual:hover .pair__counterfactual-text,
+.pair__counterfactual:focus-within .pair__counterfactual-text {
+  opacity: 1;
+  max-height: 8rem;
+}
+
+/* ─── Greedy → stable transition ────────────────────────────────────────── */
+
+.transition__stage {
+  display: grid;
+  margin-top: 1rem;
+}
+
+.transition__panel {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 350ms ease, transform 350ms ease;
+}
+
+.transition__panel--active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.transition__caption {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.transition__pairs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.transition__pair {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--muted) 40%, transparent);
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.transition__badge {
+  margin-left: 0.6rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #b3261e;
+  border: 1px solid #b3261e;
+  border-radius: 0.25rem;
+  transition: opacity 350ms ease;
+}
+
+/* ─── Constraint grid ───────────────────────────────────────────────────── */
+
+.grid-wrap {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+
+.constraint-grid {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.constraint-grid th,
+.constraint-grid td {
+  padding: 0.3rem 0.4rem;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+}
+
+.constraint-grid__row {
+  text-align: left;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.constraint-grid__col span {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  max-height: 6rem;
+}
+
+.constraint-grid__cell {
+  font-weight: 700;
+  cursor: default;
+}
+
+.constraint-grid__cell--ok {
+  color: #1b7a3d;
+  background: color-mix(in srgb, #1b7a3d 12%, transparent);
+}
+
+.constraint-grid__cell--blocked {
+  color: #b3261e;
+  background: color-mix(in srgb, #b3261e 10%, transparent);
+}
+
+/* ─── Why not the others? ───────────────────────────────────────────────── */
+
+.why-not__picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 16rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.why-not__picker select {
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--muted);
+  border-radius: 0.3rem;
+}
+
+/* ─── Impact panel ───────────────────────────────────────────────────────── */
+
+.impact__simulated {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.impact__numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.25rem;
+}
+
+.impact__number {
+  padding: 1rem 1.25rem;
+  border: 2px solid var(--accent);
+  border-radius: 0.5rem;
+}
+
+.impact__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.impact__toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.impact__caveat {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--muted);
+}

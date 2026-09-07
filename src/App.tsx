@@ -8,7 +8,7 @@
 // the result. That is the whole contract (Architecture §3).
 
 import { useMemo, useState } from 'react';
-import { compare, type Applicant, type Cohort } from './engine';
+import { ASSUMPTION_CONSERVATIVE, compare, type Applicant, type Cohort } from './engine';
 import { COHORT, provenanceLabel } from './data/cohort';
 import { RESEARCH, COHORT_SIZING_NOTE } from './data/researchConstants';
 import { AnimalWall } from './components/AnimalWall';
@@ -21,10 +21,11 @@ export function App() {
   const [hasRun, setHasRun] = useState(false);
   const [showIntake, setShowIntake] = useState(false);
   const [equityWeight, setEquityWeight] = useState(0.5);
+  const [assumptionLevel, setAssumptionLevel] = useState(ASSUMPTION_CONSERVATIVE);
 
   const outcome = useMemo(
-    () => (hasRun ? compare(cohort, { equityWeight }) : null),
-    [cohort, hasRun, equityWeight],
+    () => (hasRun ? compare(cohort, { equityWeight, assumptionLevel }) : null),
+    [cohort, hasRun, equityWeight, assumptionLevel],
   );
 
   const addApplicant = (applicant: Applicant) => {
@@ -97,9 +98,12 @@ export function App() {
           cohort={cohort}
           animals={cohort.animals}
           applicants={cohort.applicants}
-          greedyViolations={outcome.greedy.constraintViolations}
+          greedy={outcome.greedy}
+          impact={outcome.impact}
           equityWeight={equityWeight}
           onEquityWeightChange={setEquityWeight}
+          assumptionLevel={assumptionLevel}
+          onAssumptionLevelChange={setAssumptionLevel}
         />
       )}
     </main>
