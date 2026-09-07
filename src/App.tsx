@@ -8,12 +8,13 @@
 // the result. That is the whole contract (Architecture §3).
 
 import { useMemo, useState } from 'react';
-import { ASSUMPTION_CONSERVATIVE, compare, type Applicant, type Cohort } from './engine';
+import { ASSUMPTION_CONSERVATIVE, compare, type Animal, type Applicant, type Cohort } from './engine';
 import { COHORT, provenanceLabel } from './data/cohort';
 import { RESEARCH, COHORT_SIZING_NOTE } from './data/researchConstants';
 import { AnimalWall } from './components/AnimalWall';
 import { ConstraintGrid } from './components/ConstraintGrid';
 import { ThroughLine } from './components/ThroughLine';
+import { AnimalIntake } from './components/AnimalIntake';
 import { ApplicantIntake } from './components/ApplicantIntake';
 import { JudgeChallenge } from './components/JudgeChallenge';
 import { ResultsBoard } from './components/ResultsBoard';
@@ -23,6 +24,7 @@ export function App() {
   const [cohort, setCohort] = useState<Cohort>(COHORT);
   const [hasRun, setHasRun] = useState(false);
   const [showIntake, setShowIntake] = useState(false);
+  const [showAnimalIntake, setShowAnimalIntake] = useState(false);
   // Starts at 0 — PURE WANT — on purpose. The demo's hero beat (PRD §8 step 8)
   // is "slide the dial, Bruno matches", and Bruno is only unmatched below 0.30.
   // Defaulting to 0.5 meant the judge's very first board already had him placed
@@ -44,13 +46,34 @@ export function App() {
     setHasRun(false);
   };
 
+  const addAnimal = (animal: Animal) => {
+    setCohort((previous) => ({
+      animals: [...previous.animals, animal],
+      applicants: previous.applicants,
+    }));
+    setHasRun(false);
+  };
+
   const reset = () => {
     setCohort(COHORT);
     setHasRun(false);
     setShowIntake(false);
+    setShowAnimalIntake(false);
   };
 
-  const nextId = `p${String(cohort.applicants.length + 1).padStart(2, '0')}`;
+  // Counting is not enough on its own: remove-then-add, or a preset id that
+  // already looks generated, and the new record silently collides with an
+  // existing one. A duplicate id would put two different animals in the same
+  // Map key inside the engine and quietly corrupt the board, so step past
+  // anything taken.
+  const freeId = (prefix: string, taken: Set<string>) => {
+    let n = taken.size + 1;
+    while (taken.has(`${prefix}${String(n).padStart(2, '0')}`)) n += 1;
+    return `${prefix}${String(n).padStart(2, '0')}`;
+  };
+
+  const nextId = freeId('p', new Set(cohort.applicants.map((a) => a.id)));
+  const nextAnimalId = freeId('a', new Set(cohort.animals.map((a) => a.id)));
 
   return (
     <main className="shell">
@@ -77,8 +100,25 @@ export function App() {
         <button type="button" className="button button--primary" onClick={() => setHasRun(true)}>
           Run this cohort
         </button>
-        <button type="button" className="button" onClick={() => setShowIntake((v) => !v)}>
-          {showIntake ? 'Hide intake' : 'Add a household'}
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            setShowAnimalIntake((v) => !v);
+            setShowIntake(false);
+          }}
+        >
+          {showAnimalIntake ? 'Hide animal form' : 'Add an animal'}
+        </button>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            setShowIntake((v) => !v);
+            setShowAnimalIntake(false);
+          }}
+        >
+          {showIntake ? 'Hide household form' : 'Add a household'}
         </button>
         <button type="button" className="button" onClick={reset}>
           Reset to preset cohort
@@ -90,6 +130,10 @@ export function App() {
         {cohort.animals.length * cohort.applicants.length} pairwise judgements to make by
         hand
       </p>
+
+      {showAnimalIntake ? (
+        <AnimalIntake nextId={nextAnimalId} onSubmit={addAnimal} />
+      ) : null}
 
       {showIntake ? (
         <ApplicantIntake animals={cohort.animals} nextId={nextId} onSubmit={addApplicant} />
