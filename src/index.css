@@ -800,3 +800,71 @@ body {
     flex-direction: column;
   }
 }
+
+/* ─── Cohort editor ─────────────────────────────────────────────────────── */
+
+.editor {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 2px solid var(--accent);
+  border-radius: 0.6rem;
+}
+
+.editor__hint {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.editor__group {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+.editor__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editor__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+}
+
+.editor__row:last-child {
+  border-bottom: 0;
+}
+
+.editor__meta {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* The consequence of a removal, stated before the click rather than after. */
+.editor__warning {
+  display: block;
+  max-width: 32rem;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.button--remove {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.button--remove:disabled {
+  color: var(--muted);
+  border-color: color-mix(in srgb, var(--muted) 40%, transparent);
+  cursor: not-allowed;
+}

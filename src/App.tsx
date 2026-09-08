@@ -10,12 +10,14 @@
 import { useMemo, useState } from 'react';
 import { ASSUMPTION_CONSERVATIVE, compare, type Animal, type Applicant, type Cohort } from './engine';
 import { COHORT, provenanceLabel } from './data/cohort';
+import * as edit from './data/cohortEdit';
 import { RESEARCH, COHORT_SIZING_NOTE } from './data/researchConstants';
 import { AnimalWall } from './components/AnimalWall';
 import { ConstraintGrid } from './components/ConstraintGrid';
 import { ThroughLine } from './components/ThroughLine';
 import { AnimalIntake } from './components/AnimalIntake';
 import { ApplicantIntake } from './components/ApplicantIntake';
+import { CohortEditor } from './components/CohortEditor';
 import { JudgeChallenge } from './components/JudgeChallenge';
 import { ResultsBoard } from './components/ResultsBoard';
 import './index.css';
@@ -25,6 +27,7 @@ export function App() {
   const [hasRun, setHasRun] = useState(false);
   const [showIntake, setShowIntake] = useState(false);
   const [showAnimalIntake, setShowAnimalIntake] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
   // Starts at 0 — PURE WANT — on purpose. The demo's hero beat (PRD §8 step 8)
   // is "slide the dial, Bruno matches", and Bruno is only unmatched below 0.30.
   // Defaulting to 0.5 meant the judge's very first board already had him placed
@@ -38,42 +41,41 @@ export function App() {
     [cohort, hasRun, equityWeight, assumptionLevel],
   );
 
-  const addApplicant = (applicant: Applicant) => {
-    setCohort((previous) => ({
-      animals: previous.animals,
-      applicants: [...previous.applicants, applicant],
-    }));
+  // Every edit takes the board down. A results board rendered from a cohort
+  // that has since changed is the same lie in either direction — an animal
+  // standing on it who is already gone, or one missing who was just added —
+  // and re-running is one click away.
+  //
+  // The edits themselves live in data/cohortEdit.ts, not here: they are what
+  // has to hold (no duplicate id, no dangling named claim), and a component
+  // module cannot be imported by a node-environment test.
+  const editCohort = (next: (previous: Cohort) => Cohort) => {
+    setCohort(next);
     setHasRun(false);
   };
 
-  const addAnimal = (animal: Animal) => {
-    setCohort((previous) => ({
-      animals: [...previous.animals, animal],
-      applicants: previous.applicants,
-    }));
-    setHasRun(false);
-  };
+  const addApplicant = (applicant: Applicant) =>
+    editCohort((previous) => edit.addApplicant(previous, applicant));
+
+  const addAnimal = (animal: Animal) =>
+    editCohort((previous) => edit.addAnimal(previous, animal));
+
+  const removeAnimal = (id: string) =>
+    editCohort((previous) => edit.removeAnimal(previous, id));
+
+  const removeApplicant = (id: string) =>
+    editCohort((previous) => edit.removeApplicant(previous, id));
 
   const reset = () => {
     setCohort(COHORT);
     setHasRun(false);
     setShowIntake(false);
     setShowAnimalIntake(false);
+    setShowEditor(false);
   };
 
-  // Counting is not enough on its own: remove-then-add, or a preset id that
-  // already looks generated, and the new record silently collides with an
-  // existing one. A duplicate id would put two different animals in the same
-  // Map key inside the engine and quietly corrupt the board, so step past
-  // anything taken.
-  const freeId = (prefix: string, taken: Set<string>) => {
-    let n = taken.size + 1;
-    while (taken.has(`${prefix}${String(n).padStart(2, '0')}`)) n += 1;
-    return `${prefix}${String(n).padStart(2, '0')}`;
-  };
-
-  const nextId = freeId('p', new Set(cohort.applicants.map((a) => a.id)));
-  const nextAnimalId = freeId('a', new Set(cohort.animals.map((a) => a.id)));
+  const nextId = edit.nextApplicantId(cohort);
+  const nextAnimalId = edit.nextAnimalId(cohort);
 
   return (
     <main className="shell">
@@ -106,6 +108,7 @@ export function App() {
           onClick={() => {
             setShowAnimalIntake((v) => !v);
             setShowIntake(false);
+            setShowEditor(false);
           }}
         >
           {showAnimalIntake ? 'Hide animal form' : 'Add an animal'}
@@ -116,9 +119,21 @@ export function App() {
           onClick={() => {
             setShowIntake((v) => !v);
             setShowAnimalIntake(false);
+            setShowEditor(false);
           }}
         >
           {showIntake ? 'Hide household form' : 'Add a household'}
+        </button>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            setShowEditor((v) => !v);
+            setShowIntake(false);
+            setShowAnimalIntake(false);
+          }}
+        >
+          {showEditor ? 'Hide cohort editor' : 'Remove records'}
         </button>
         <button type="button" className="button" onClick={reset}>
           Reset to preset cohort
@@ -137,6 +152,14 @@ export function App() {
 
       {showIntake ? (
         <ApplicantIntake animals={cohort.animals} nextId={nextId} onSubmit={addApplicant} />
+      ) : null}
+
+      {showEditor ? (
+        <CohortEditor
+          cohort={cohort}
+          onRemoveAnimal={removeAnimal}
+          onRemoveApplicant={removeApplicant}
+        />
       ) : null}
 
       {outcome === null ? (
