@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<title>Kyndra — Transparent Animal Matching</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   KYNDRA — "Warm Evidence" design system
+   One coherent layer. No claymorphism, no !important wars.
+   Terracotta is the brand color. Green and near-black ink are
+   semantic-only (matched / eliminated) — never decorative.
+   ========================================================== */
+:root{
+  --ink:#1D1812;
+  --ink-soft:#6E5A46;
+  --ink-faint:#A08E76;
+  --paper:#FFFFFF;
+  --paper-warm:#F1E2C4;
+  --surface:#FFFCF6;
+  --line:#DCC79A;
+  --terracotta:#D95F3A;
+  --terracotta-strong:#B94729;
+  --terracotta-tint:#FBEAE1;
+  --verified:#3B6B45;
+  --verified-tint:#E7EFE3;
+  --eliminated:#1D1812;
+  --eliminated-tint:#ECEAE5;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow-modal:0 24px 64px rgba(36,35,31,.22);
+  --font-display:'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body:'Plus Jakarta Sans', system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; color:var(--ink); background:var(--paper);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+.tnum{font-variant-numeric:tabular-nums}
+button,a,select,input{font:inherit; color:inherit}
+a{text-decoration:none}
+button{border:0; background:none; cursor:pointer}
+h1,h2,h3,h4{margin:0; font-family:var(--font-display); font-weight:700; letter-spacing:-.02em; color:var(--ink)}
+p{margin:0}
+
+/* ---------- Nav ---------- */
+.top-nav{
+  position:sticky; top:0; z-index:30; background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:26px; padding:16px max(20px,calc((100vw - 1180px)/2));
+}
+.nav-logo{display:flex; align-items:center; gap:9px; font-family:var(--font-display); font-weight:700; font-size:1.28rem; letter-spacing:-.02em; color:var(--ink); transition:transform .12s}
+.nav-logo:active{transform:scale(.97)}
+.logo-mark{width:30px;height:30px; flex-shrink:0;}
+.nav-links{display:flex; gap:4px; flex:1; justify-content:center}
+.nav-link{padding:9px 13px; border-radius:var(--radius-sm); color:var(--ink-soft); font-size:.92rem; font-weight:600; position:relative; transition:color .2s ease, transform .12s}
+.nav-link:not(.quiz-link)::after{content:"";position:absolute;left:13px;right:13px;bottom:2px;height:2px;background:var(--terracotta); opacity:0; transform:scaleX(0); transform-origin:center; transition:transform .25s cubic-bezier(.22,1,.36,1), opacity .25s ease}
+.nav-link:hover{color:var(--ink)}
+.nav-link:hover:not(.quiz-link)::after{opacity:1; transform:scaleX(1)}
+.nav-link:active{transform:scale(.97)}
+.nav-link.active{color:var(--ink)}
+.nav-link.active:not(.quiz-link)::after{opacity:1; transform:scaleX(1)}
+.nav-actions{display:flex; gap:8px; align-items:center}
+.quiz-link{background:var(--terracotta); color:#fff!important; padding:10px 16px; border-radius:var(--radius-sm); font-weight:700; transition:background .2s ease, transform .12s}
+.quiz-link:hover{background:var(--terracotta-strong)}
+.quiz-link:active{transform:scale(.97)}
+
+main{width:min(1180px,calc(100% - 40px)); margin:0 auto 90px}
+
+/* ---------- Hero ---------- */
+.hero{
+  width:100%; margin:0 auto; padding:54px max(20px,calc((100vw - 1180px)/2)) 50px;
+  border-bottom:1px solid var(--line);
+}
+.hero-inner{
+  width:min(1180px,100%); margin:0 auto; display:grid;
+  grid-template-columns:minmax(0,1.08fr) minmax(300px,.72fr);
+  gap:clamp(34px,6vw,78px); align-items:center;
+}
+.hero-copy-block{min-width:0; text-align:left; padding:12px 0 8px}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:.78rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--terracotta-strong); margin-bottom:18px;
+}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--terracotta)}
+h1{max-width:720px; margin:0 0 20px; font-size:clamp(2.6rem,5.2vw,4.35rem); line-height:1.03; font-weight:800; letter-spacing:-.03em; font-style:normal}
+h1 em{font-style:normal; color:var(--terracotta-strong); font-weight:800}
+.hero-copy{max-width:610px; margin:0; color:var(--ink-soft); font-size:1.08rem; line-height:1.6; font-weight:500}
+.hero-actions{display:flex; justify-content:flex-start; gap:12px; margin:30px 0 0; flex-wrap:wrap}
+.hero-dog{
+  position:relative; width:100%; max-width:370px; justify-self:end;
+  aspect-ratio:512 / 910; min-height:390px; max-height:510px;
+  overflow:hidden; border-radius:18px; background:var(--paper-warm);
+  border:1px solid var(--line); box-shadow:0 18px 45px -28px rgba(29,24,18,.35);
+  isolation:isolate;
+}
+.hero-dog::after{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:2;
+  background:linear-gradient(180deg,rgba(29,24,18,.06),transparent 28%,transparent 72%,rgba(29,24,18,.16));
+}
+.hero-dog video{
+  display:block; width:100%; height:100%; object-fit:cover; object-position:center;
+  pointer-events:none; user-select:none;
+}
+.hero-dog-label{
+  position:absolute; z-index:3; left:16px; bottom:15px; padding:8px 11px;
+  border-radius:999px; background:rgba(255,252,246,.9); border:1px solid rgba(220,199,154,.9);
+  color:var(--ink); font-size:.72rem; font-weight:700; letter-spacing:.01em;
+  backdrop-filter:blur(8px);
+}
+.primary,.secondary{padding:14px 24px; border-radius:var(--radius-sm); font-weight:700; font-size:.95rem; transition:transform .12s}
+.primary{background:var(--terracotta); color:#fff}
+.primary:hover{background:var(--terracotta-strong)}
+.secondary{background:var(--paper); border:1.5px solid var(--line); color:var(--ink)}
+.secondary:hover{border-color:var(--ink-faint)}
+.primary:active,.secondary:active{transform:scale(.97)}
+
+/* ---------- Section head ---------- */
+.section-head{display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin:52px 0 24px; padding-bottom:20px; border-bottom:1px solid var(--line)}
+.section-head h2{font-size:clamp(1.7rem,3vw,2.3rem)}
+.section-head p{color:var(--ink-soft); margin-top:8px; font-size:.98rem; max-width:46ch}
+.proof{padding:9px 14px; border:1px solid var(--line); border-radius:999px; color:var(--verified); font-weight:700; font-size:.8rem; white-space:nowrap; display:flex; align-items:center; gap:7px}
+.proof::before{content:"✓"}
+
+/* ---------- Filters ---------- */
+.filters{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:26px}
+.filter-btn{padding:9px 15px; border-radius:999px; border:1px solid var(--line); color:var(--ink-soft); font-weight:600; font-size:.86rem}
+.filter-btn.active{background:var(--ink); border-color:var(--ink); color:#fff}
+.filter-btn:hover:not(.active){border-color:var(--ink-faint); color:var(--ink)}
+
+/* ---------- Companion grid ---------- */
+.companion-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px}
+.companion-card{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--paper); transition:border-color .35s cubic-bezier(.22,1,.36,1), transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s cubic-bezier(.22,1,.36,1)}
+.companion-card:hover{border-color:var(--terracotta); transform:translateY(-4px); box-shadow:0 14px 30px -12px rgba(217,95,58,.35)}
+.card-image-wrapper{position:relative; height:180px; background:var(--paper-warm); overflow:hidden; border-bottom:1px solid var(--line); transition:border-color .35s cubic-bezier(.22,1,.36,1)}
+.companion-card:hover .card-image-wrapper{border-bottom-color:var(--terracotta-tint)}
+.card-photo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.22,1,.36,1)}
+.companion-card:hover .card-photo{transform:scale(1.06)}
+.photo-credit{position:absolute; right:9px; bottom:9px; z-index:2; padding:4px 8px; border-radius:999px; background:rgba(36,35,31,.55); color:#fff; font-size:.62rem; font-weight:600; letter-spacing:.01em}
+.status-tag{position:absolute; left:12px; top:12px; background:var(--ink); color:#fff; font-size:.72rem; font-weight:700; padding:6px 10px; border-radius:5px}
+.status-tag.long{background:var(--terracotta)}
+.card-content{padding:16px 18px 18px}
+.card-header{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+.pet-name{font-size:1.3rem; transition:color .35s cubic-bezier(.22,1,.36,1)}
+.companion-card:hover .pet-name{color:var(--terracotta-strong)}
+.pet-breed{font-size:.76rem; color:var(--ink-faint); text-align:right; font-family:var(--font-body); font-weight:600}
+.card-location{color:var(--ink-faint); font-size:.8rem; margin:8px 0 14px}
+.view-details-btn{width:100%; padding:11px; border-radius:var(--radius-sm); border:1px solid var(--line); font-weight:700; font-size:.85rem; color:var(--ink)}
+.view-details-btn:hover{border-color:var(--ink); background:var(--surface)}
+
+/* ---------- Explainer / how it works ---------- */
+.explainer{margin-top:0; padding:32px 0; display:grid; grid-template-columns:1fr 1.15fr; gap:40px; align-items:start}
+.explainer h3{font-size:1.7rem; max-width:20ch}
+.explainer > div > p{color:var(--ink-soft); margin-top:14px; max-width:44ch}
+.reason{margin-top:18px; padding:16px 18px; background:var(--paper-warm); border-radius:var(--radius); font-size:.9rem}
+.reason b{display:block; color:var(--terracotta-strong); margin-bottom:4px; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; font-family:var(--font-body); font-weight:700}
+.steps{display:flex; flex-direction:column}
+.step{display:flex; gap:16px; padding:20px 0; border-top:1px solid var(--line)}
+.step:first-child{border-top:0; padding-top:0}
+.step b{font-family:var(--font-display); font-size:1.3rem; color:var(--ink-faint); font-weight:600; flex-shrink:0; width:34px}
+.step strong{display:block; font-family:var(--font-body); font-weight:700; font-size:.98rem; margin-bottom:4px}
+.step span{color:var(--ink-soft); font-size:.88rem}
+
+/* ---------- Demo ---------- */
+.demo-intro{max-width:640px}
+.demo-intro h3{font-size:1.9rem}
+.demo-intro p{color:var(--ink-soft); margin-top:10px}
+.demo-layout{display:grid; grid-template-columns:1fr 1.25fr; gap:22px; margin-top:28px; align-items:start}
+.intake-card{padding:24px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface)}
+.intake-card h4{font-size:1.05rem}
+.intake-card .hint{color:var(--ink-soft); font-size:.83rem; margin:6px 0 20px}
+.field{margin-bottom:18px; padding-bottom:18px; border-bottom:1px solid var(--line)}
+.field:last-of-type{border-bottom:0; padding-bottom:0; margin-bottom:6px}
+.field label{display:block; font-size:.8rem; font-weight:700; color:var(--ink); margin-bottom:9px}
+.pill-group{display:flex; flex-wrap:wrap; gap:8px}
+.pill{padding:9px 13px; border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--paper); color:var(--ink-soft); font-weight:600; font-size:.82rem}
+.pill.selected{background:var(--terracotta-tint); border-color:var(--terracotta); color:var(--terracotta-strong)}
+.run-btn{width:100%; margin-top:4px; padding:14px; border-radius:var(--radius-sm); background:var(--ink); color:#fff; font-weight:700}
+.run-btn:hover{background:#000}
+.run-btn:disabled{background:var(--line); color:var(--ink-faint); cursor:not-allowed}
+
+.results-panel{min-height:100%}
+.results-empty{height:100%; min-height:260px; display:grid; place-items:center; text-align:center; color:var(--ink-soft); padding:28px; border:1px dashed var(--line); border-radius:var(--radius); font-size:.92rem}
+.results-board{display:none; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.results-board.visible{display:block}
+.board-summary{display:flex; background:var(--ink); color:#fff}
+.board-stat{flex:1; padding:16px 18px}
+.board-stat+.board-stat{border-left:1px solid rgba(255,255,255,.16)}
+.board-stat b{display:block; font-family:var(--font-display); font-size:1.7rem; font-weight:600}
+.board-stat span{font-size:.74rem; color:rgba(255,255,255,.6); font-weight:600; text-transform:uppercase; letter-spacing:.04em}
+.match-list{display:flex; flex-direction:column}
+.match-row{display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:14px; padding:14px 18px; border-top:1px solid var(--line)}
+.match-row.is-you{background:var(--terracotta-tint)}
+.match-avatar{width:38px;height:38px; border-radius:50%; background:var(--paper-warm); display:grid; place-items:center; flex-shrink:0; border:1px solid var(--line)}
+.match-avatar svg{width:22px;height:22px}
+.match-info b{font-family:var(--font-body); font-weight:700; font-size:.94rem}
+.match-info p{margin:2px 0 0; color:var(--ink-faint); font-size:.78rem}
+.match-person{font-size:.86rem; font-weight:700; text-align:right; min-width:110px}
+.unmatched-row .match-person{color:var(--ink-faint); font-style:italic; font-weight:600}
+.why-btn{padding:6px 0; font-size:.78rem; font-weight:700; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px}
+.why-btn:hover{color:var(--ink)}
+.why-detail{display:none; margin:0 18px 14px; padding:14px 16px; background:var(--paper-warm); border-radius:var(--radius-sm); font-size:.86rem}
+.why-detail.open{display:block}
+.why-detail .cite{display:block; margin-top:6px; font-size:.76rem; color:var(--ink-soft); font-weight:600}
+
+/* ---------- Stamps ---------- */
+.proof-stamp{
+  display:inline-flex; align-items:center; gap:6px; border:2px solid currentColor; border-radius:3px;
+  padding:5px 10px; font-weight:800; font-size:.68rem; letter-spacing:.09em; text-transform:uppercase;
+  font-family:var(--font-body); animation:stampIn .16s ease-out;
+}
+.proof-stamp.matched,.proof-stamp.stable{color:var(--verified); background:var(--verified-tint)}
+.proof-stamp.blocked,.proof-stamp.eliminated{color:var(--eliminated); background:var(--eliminated-tint)}
+@keyframes stampIn{0%{opacity:0; transform:scale(1.3)}100%{opacity:1; transform:scale(1)}}
+
+/* ---------- Tool grid ---------- */
+.tool-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:22px}
+.tool-card{padding:22px; border:1px solid var(--line); border-radius:var(--radius); background:var(--paper)}
+.tool-card h4{font-size:1.05rem}
+.tool-card .hint{color:var(--ink-soft); font-size:.84rem; margin:6px 0 16px; line-height:1.5}
+.tool-card select{width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--paper); font-weight:600; font-size:.85rem; margin-bottom:10px}
+.swap-btn,.stability-btn{padding:11px 16px; border-radius:var(--radius-sm); background:var(--ink); color:#fff; font-weight:700; font-size:.86rem}
+.swap-btn:hover,.stability-btn:hover{background:#000}
+.swap-result{margin-top:14px; padding:13px 15px; border-radius:var(--radius-sm); font-size:.85rem; display:none; line-height:1.5}
+.swap-result.show{display:block}
+.swap-result.fail{background:var(--eliminated-tint); color:var(--ink)}
+.swap-result.pass{background:var(--verified-tint); color:#215c3d}
+
+.dial-row{display:flex; align-items:center; gap:14px; margin:14px 0 8px}
+.dial-row input[type=range]{
+  flex:1; -webkit-appearance:none; height:5px; border-radius:3px; background:var(--line); outline:none;
+}
+.dial-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px;height:20px;border-radius:50%; background:var(--terracotta); border:3px solid #fff; box-shadow:0 0 0 1px var(--line); cursor:pointer}
+.dial-value{font-family:var(--font-display); font-weight:700; min-width:28px; text-align:right; font-size:1.1rem}
+.dial-note{font-size:.8rem; color:var(--ink-faint); margin-top:2px}
+.dial-outcome{margin-top:14px; padding:13px 15px; border-radius:var(--radius-sm); background:var(--surface); border:1px solid var(--line); font-size:.85rem; line-height:1.6}
+
+.unmatched-list{display:flex; flex-direction:column; gap:10px; margin-top:2px}
+.unmatched-item{padding:12px 14px; border-radius:var(--radius-sm); background:var(--surface); border:1px solid var(--line); font-size:.85rem; display:flex; gap:10px; align-items:flex-start}
+.unmatched-item .ua{width:30px;height:30px;border-radius:50%;background:var(--paper-warm);display:grid;place-items:center;flex-shrink:0;border:1px solid var(--line)}
+.unmatched-item .ua svg{width:18px;height:18px}
+.unmatched-item b{font-family:var(--font-body); display:block; margin-bottom:3px}
+
+.impact-row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.impact-box{padding:16px; border-radius:var(--radius-sm); background:var(--surface); border:1px solid var(--line)}
+.impact-box b{font-family:var(--font-display); font-size:1.8rem; display:block; font-weight:600}
+.impact-box span{font-size:.78rem; color:var(--ink-soft)}
+.impact-toggle{display:flex; gap:8px; margin-top:14px}
+.impact-toggle button{flex:1; padding:9px; border-radius:var(--radius-sm); border:1px solid var(--line); color:var(--ink-soft); font-weight:700; font-size:.8rem}
+.impact-toggle button.active{color:var(--terracotta-strong); border-color:var(--terracotta); background:var(--terracotta-tint)}
+.impact-caveat{margin-top:12px; font-size:.76rem; color:var(--ink-faint); line-height:1.5}
+
+.citation-panel{margin-top:20px; padding:26px; border-radius:var(--radius); background:var(--paper-warm)}
+.citation-panel h4{font-size:1.05rem; margin-bottom:14px}
+.citation-item{padding:12px 0; border-top:1px solid #E3D6C2; font-size:.87rem; color:var(--ink-soft); line-height:1.55}
+.citation-item:first-of-type{border-top:0}
+.citation-item b{color:var(--ink); font-weight:700}
+.honesty-note{margin-top:16px; padding:14px 16px; border-radius:var(--radius-sm); background:#fff; border:1px solid var(--line); font-size:.84rem; line-height:1.55; color:var(--ink-soft)}
+.honesty-note b{color:var(--ink)}
+
+/* ---------- Footer ---------- */
+.site-footer{margin-top:70px; padding:50px max(20px,calc((100vw - 1180px)/2)) 30px; background:var(--ink); color:#D9D3C6}
+.footer-content{display:flex; justify-content:space-between; gap:50px}
+.footer-brand{max-width:380px}
+.footer-brand .nav-logo{color:#fff}
+.footer-brand p{margin-top:10px; color:#B8B0A0; font-size:.9rem; line-height:1.6}
+.footer-links{display:grid; grid-template-columns:repeat(3,1fr); gap:40px}
+.link-column h4{font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--terracotta); margin:0 0 14px; font-family:var(--font-body); font-weight:700}
+.link-column a{display:block; color:#B8B0A0; margin:9px 0; font-size:.88rem}
+.link-column a:hover{color:#fff}
+.footer-bottom{display:flex; justify-content:space-between; gap:20px; border-top:1px solid rgba(255,255,255,.14); margin-top:36px; padding-top:20px; color:#9A9385; font-size:.78rem}
+.legal-links{display:flex; gap:18px}
+
+/* ---------- Modal ---------- */
+.modal-backdrop{position:fixed; inset:0; background:rgba(36,35,31,.5); display:none; place-items:center; z-index:50; padding:20px}
+.modal-backdrop.open{display:grid}
+.modal{width:min(540px,100%); padding:30px; border-radius:16px; background:#fff; box-shadow:var(--shadow-modal); position:relative; max-height:86vh; overflow:auto}
+.close{position:absolute; right:18px; top:18px; width:34px;height:34px; border-radius:50%; background:var(--surface); border:1px solid var(--line); font-weight:700; font-size:18px}
+.close:hover{background:var(--paper-warm)}
+.modal .mini-pet{width:74px;height:74px; border-radius:50%; background:var(--paper-warm); display:grid; place-items:center; border:1px solid var(--line); overflow:hidden}
+.modal .mini-pet img{width:100%; height:100%; object-fit:cover}
+.modal h2{font-size:2rem; margin-top:16px}
+.modal .reason{margin:16px 0}
+.modal-actions{display:flex; gap:10px; margin-top:6px}
+
+@media(max-width:900px){
+  .nav-links{display:none}
+  .hero-inner{grid-template-columns:1fr; gap:30px}
+  .hero-copy-block{text-align:center; padding:0}
+  .hero-copy{margin:0 auto}
+  .hero-actions{justify-content:center}
+  .hero-dog{justify-self:center; width:min(100%,360px); max-height:460px}
+  .companion-grid{grid-template-columns:repeat(2,1fr)}
+  .explainer{grid-template-columns:1fr; gap:20px}
+  .demo-layout{grid-template-columns:1fr}
+  .tool-grid{grid-template-columns:1fr}
+  .footer-content{flex-direction:column}
+}
+@media(max-width:620px){
+  .hero{padding-top:40px}
+  .hero-inner{gap:24px}
+  h1{font-size:2.4rem}
+  .hero-copy{font-size:1rem}
+  .hero-dog{min-height:320px; max-height:390px; border-radius:14px}
+  .companion-grid{grid-template-columns:1fr}
+  .section-head{flex-direction:column; align-items:flex-start}
+  .footer-links{grid-template-columns:1fr 1fr}
+  .footer-bottom{flex-direction:column; gap:10px}
+  .impact-row{grid-template-columns:1fr}
+  .match-row{grid-template-columns:auto 1fr; row-gap:6px}
+  .match-person{grid-column:2; text-align:left}
+  .why-btn{grid-column:2; text-align:left; padding-top:0}
+}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+  <nav class="top-nav" aria-label="Primary navigation">
+    <a class="nav-logo" href="#"><svg class="logo-mark" viewBox="0 0 32 32"><use href="#paw-icon"/></svg>Kyndra</a>
+    <div class="nav-links">
+      <a href="#companions" class="nav-link active">Explore Cohort</a>
+      <a href="#demo" class="nav-link">Try Matching</a>
+      <a href="#how" class="nav-link">How It Works</a>
+      <a href="#evidence" class="nav-link">Evidence</a>
+    </div>
+    <div class="nav-actions">
+      <a href="#shelter" class="nav-link">Shelter Portal</a>
+      <a href="#demo" class="nav-link quiz-link">Try Matching</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy-block">
+        <span class="eyebrow">Transparent · Explainable · Constraint-aware</span>
+        <h1>Where the right homes meet the <em>right animals.</em></h1>
+        <p class="hero-copy">Kyndra treats shelter placement as a two-sided matching problem. Hard constraints remove impossible pairings, preferences stay independent, and every proposed match can be inspected — and argued with.</p>
+        <div class="hero-actions">
+          <a class="primary" href="#demo">Run the matching engine</a>
+          <a class="secondary" href="#companions">Explore the cohort</a>
+        </div>
+      </div>
+
+      <div class="hero-dog" id="heroDog" aria-label="Interactive dog banner. Move your mouse to guide the dog's head.">
+        <video id="heroDogVideo" muted playsinline preload="auto" tabindex="-1" aria-hidden="true">
+          <source src="3D_beagle_panning_head_202609082053.mp4" type="video/mp4">
+        </video>
+        <div class="hero-dog-label">Move your cursor · guide the dog</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="companions">
+      <div class="section-head">
+        <div>
+          <h2>Simulated cohort</h2>
+          <p>Explore the animals before running the matching flow. Every profile is inspectable.</p>
+        </div>
+        <div class="proof">Verified matching rules</div>
+      </div>
+
+      <div class="filters cohort-filters" aria-label="Cohort filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="dog">Dogs</button>
+        <button class="filter-btn" data-filter="cat">Cats</button>
+        <button class="filter-btn" data-filter="small">Small Pets</button>
+        <button class="filter-btn" data-filter="long">Long-Stay</button>
+      </div>
+
+      <div class="companion-grid">
+        <article class="companion-card" data-type="dog" data-days="340">
+          <div class="card-image-wrapper">
+            <span class="status-tag long">340 days · Long-stay</span>
+            <img class="card-photo" src="https://images.unsplash.com/photo-1571404569825-8c3b2c7dea9a?auto=format&fit=crop&w=500&h=500&q=80" alt="Brindle Boxer mix dog, stand-in photo for Bruno's simulated profile" loading="lazy">
+            <span class="photo-credit">Ümit Yıldırım / Unsplash</span>
+          </div>
+          <div class="card-content">
+            <div class="card-header"><h3 class="pet-name">Bruno</h3><span class="pet-breed">Boxer Mix · 4 yrs</span></div>
+            <div class="card-location">Simulated shelter cohort</div>
+            <button class="view-details-btn" data-pet="Bruno">View match requirements →</button>
+          </div>
+        </article>
+
+        <article class="companion-card" data-type="dog" data-days="45">
+          <div class="card-image-wrapper">
+            <span class="status-tag">45 days waiting</span>
+            <img class="card-photo" src="https://images.unsplash.com/photo-1596949995396-ed85d653faa0?auto=format&fit=crop&w=500&h=500&q=80" alt="Golden retriever mix dog, stand-in photo for Luna's simulated profile" loading="lazy">
+            <span class="photo-credit">Zhifei Zhou / Unsplash</span>
+          </div>
+          <div class="card-content">
+            <div class="card-header"><h3 class="pet-name">Luna</h3><span class="pet-breed">Golden Mix · 2 yrs</span></div>
+            <div class="card-location">Simulated shelter cohort</div>
+            <button class="view-details-btn" data-pet="Luna">View match requirements →</button>
+          </div>
+        </article>
+
+        <article class="companion-card" data-type="cat" data-days="60">
+          <div class="card-image-wrapper">
+            <span class="status-tag">60 days waiting</span>
+            <img class="card-photo" src="https://images.unsplash.com/photo-1544076350-465637ebdf5a?auto=format&fit=crop&w=500&h=500&q=80" alt="Gray shorthair cat, stand-in photo for Whiskers's simulated profile" loading="lazy">
+            <span class="photo-credit">Joshua Hoehne / Unsplash</span>
+          </div>
+          <div class="card-content">
+            <div class="card-header"><h3 class="pet-name">Whiskers</h3><span class="pet-breed">Shorthair · 3 yrs</span></div>
+            <div class="card-location">Simulated shelter cohort</div>
+            <button class="view-details-btn" data-pet="Whiskers">View match requirements →</button>
+          </div>
+        </article>
+
+        <article class="companion-card" data-type="small" data-days="30">
+          <div class="card-image-wrapper">
+            <span class="status-tag">30 days waiting</span>
+            <img class="card-photo" src="https://images.unsplash.com/photo-1668791627301-23690de58952?auto=format&fit=crop&w=500&h=500&q=80" alt="Small brown and white pet rabbit, stand-in photo for Cinnamon's simulated profile" loading="lazy">
+            <span class="photo-credit">Some Tale / Unsplash</span>
+          </div>
+          <div class="card-content">
+            <div class="card-header"><h3 class="pet-name">Cinnamon</h3><span class="pet-breed">Holland Lop · 1 yr</span></div>
+            <div class="card-location">Simulated shelter cohort</div>
+            <button class="view-details-btn" data-pet="Cinnamon">View match requirements →</button>
+          </div>
+        </article>
+
+        <article class="companion-card" data-type="dog" data-days="52">
+          <div class="card-image-wrapper">
+            <span class="status-tag">52 days waiting</span>
+            <img class="card-photo" src="https://images.unsplash.com/photo-1580467277788-c6e040296602?auto=format&fit=crop&w=500&h=500&q=80" alt="Miniature Schnauzer dog, stand-in photo for Perro's simulated profile" loading="lazy">
+            <span class="photo-credit">Sebastian Coman / Unsplash</span>
+          </div>
+          <div class="card-content">
+            <div class="card-header"><h3 class="pet-name">Perro</h3><span class="pet-breed">Schnauzer · 5 yrs</span></div>
+            <div class="card-location">Simulated shelter cohort</div>
+            <button class="view-details-btn" data-pet="Perro">View match requirements →</button>
+          </div>
+        </article>
+
+        <article class="companion-card" data-type="cat" data-days="25">
+          <div class="card-image-wrapper">
+            <span class="status-tag">25 days waiting</span>
+            <img class="card-photo" src="https://images.unsplash.com/photo-1503777119540-ce54b422baff?auto=format&fit=crop&w=500&h=500&q=80" alt="Calico cat, stand-in photo for Bella's simulated profile" loading="lazy">
+            <span class="photo-credit">Uriel Soberanes / Unsplash</span>
+          </div>
+          <div class="card-content">
+            <div class="card-header"><h3 class="pet-name">Bella</h3><span class="pet-breed">Longhair Calico · 2 yrs</span></div>
+            <div class="card-location">Simulated shelter cohort</div>
+            <button class="view-details-btn" data-pet="Bella">View match requirements →</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="demo">
+      <div class="section-head">
+        <div class="demo-intro" style="max-width:none;">
+          <h2 style="font-size:clamp(1.7rem,3vw,2.3rem);">Run the cohort yourself.</h2>
+          <p style="margin-top:8px;">This runs live, in your browser, over today's six-animal cohort. Answer the same question a coordinator would ask an applicant, and Kyndra will filter, derive, and settle a stable assignment for the whole cohort — including yours.</p>
+        </div>
+      </div>
+
+      <div class="demo-layout">
+        <div class="intake-card">
+          <h4>Applicant intake</h4>
+          <p class="hint">Six households have already applied. Fill this in and Kyndra adds you to the pool.</p>
+
+          <div class="field">
+            <label>Is there a specific animal you're here for?</label>
+            <div class="pill-group" id="specificGroup">
+              <button class="pill selected" data-value="">No — match me on fit</button>
+              <button class="pill" data-value="bruno">Yes — Bruno</button>
+              <button class="pill" data-value="luna">Yes — Luna</button>
+              <button class="pill" data-value="perro">Yes — Perro</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Home type</label>
+            <div class="pill-group" id="homeGroup">
+              <button class="pill" data-value="yard">House with a yard</button>
+              <button class="pill selected" data-value="apartment">Apartment, no yard</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Young children at home</label>
+            <div class="pill-group" id="kidsGroup">
+              <button class="pill selected" data-value="no">No</button>
+              <button class="pill" data-value="yes">Yes</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Other pets already in the home</label>
+            <div class="pill-group" id="petsGroup">
+              <button class="pill selected" data-value="">None</button>
+              <button class="pill" data-value="dog">A dog</button>
+              <button class="pill" data-value="cat">A cat</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Experience with this kind of animal</label>
+            <div class="pill-group" id="expGroup">
+              <button class="pill selected" data-value="first-time">First-time owner</button>
+              <button class="pill" data-value="experienced">Experienced</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Energy level you're looking for</label>
+            <div class="pill-group" id="energyGroup">
+              <button class="pill" data-value="low">Calm</button>
+              <button class="pill selected" data-value="medium">Moderate</button>
+              <button class="pill" data-value="high">High-energy</button>
+            </div>
+          </div>
+
+          <button class="run-btn" id="runMatch">Run the matching engine →</button>
+        </div>
+
+        <div class="results-panel">
+          <div class="results-empty" id="resultsEmpty">
+            Fill in the intake and run the engine to see where the whole cohort lands — not just you.
+          </div>
+          <div class="results-board" id="resultsBoard">
+            <div class="board-summary">
+              <div class="board-stat"><b class="tnum" id="statMatched">0</b><span>Matched</span></div>
+              <div class="board-stat"><b class="tnum" id="statUnmatched">0</b><span>Unmatched</span></div>
+              <div class="board-stat"><b class="tnum" id="statChecks">0</b><span>Checks run</span></div>
+            </div>
+            <div class="match-list" id="matchList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-grid" id="postMatchTools" style="display:none">
+        <div class="tool-card">
+          <h4>Attempt a swap</h4>
+          <p class="hint">Pick two matched animals. Kyndra checks whether swapping their applicants would leave both sides better off — a blocking pair. If it can't find one, the match is stable.</p>
+          <select id="swapA"></select>
+          <select id="swapB"></select>
+          <button class="swap-btn" id="runSwap">Attempt the swap</button>
+          <div class="swap-result" id="swapResult"></div>
+        </div>
+
+        <div class="tool-card">
+          <h4>Long-stay equity dial</h4>
+          <p class="hint">Ties only. It can shift which animal wins a tied preference — it can never place an animal into a household that fails a hard constraint.</p>
+          <div class="dial-row">
+            <input type="range" id="equityDial" min="0" max="10" value="0">
+            <span class="dial-value tnum" id="dialValue">0</span>
+          </div>
+          <div class="dial-note">0 = no equity weighting. 10 = ties always favor the longest-waiting animal.</div>
+          <div class="dial-outcome" id="dialOutcome">Run the match first, then move the dial to see who it affects.</div>
+        </div>
+
+        <div class="tool-card">
+          <h4>Unmatched analysis</h4>
+          <p class="hint">Animals nobody in the current applicant pool could take, and why — read as a recruitment target, not a failure.</p>
+          <div class="unmatched-list" id="unmatchedList"></div>
+        </div>
+
+        <div class="tool-card">
+          <h4>Impact, in two numbers</h4>
+          <p class="hint">Kept separate on purpose — one is provable from this run, one is a labeled projection.</p>
+          <div class="impact-row">
+            <div class="impact-box"><b class="tnum" id="impactChecks">0</b><span>pairwise judgements run instantly, provable</span></div>
+            <div class="impact-box"><b class="tnum" id="impactWelfare">—</b><span>projected mismatches avoided this run</span></div>
+          </div>
+          <div class="impact-toggle">
+            <button class="active" data-mode="conservative" id="btnConservative">Conservative</button>
+            <button data-mode="optimistic" id="btnOptimistic">Optimistic</button>
+          </div>
+          <p class="impact-caveat">Directionally indicative, not a causal estimate. Kyndra's constraints don't capture the full behavioural variance Powell et al. measured — see citations below.</p>
+        </div>
+      </div>
+
+      <button class="stability-btn" id="verifyStability" style="margin-top:18px">Verify: no blocking pairs exist</button>
+      <div class="swap-result" id="stabilityResult" style="margin-top:12px"></div>
+
+      <div id="evidence" class="citation-panel">
+        <h4>What's real, what's simulated</h4>
+        <div class="citation-item"><b>The cohort is simulated.</b> Six animals, sized consistent with Shelter Animals Count's published per-organisation averages — not sourced from any individual shelter's records, and not depicting real animals.</div>
+        <div class="citation-item"><b>The constraints are real.</b> Powell et al. (2021, <i>Scientific Reports</i>), analysing 23,932 adoption records, found a 16.3% return rate for adopted dogs — 35% behavioural incompatibility, 18% conflict with an existing household pet. Every hard constraint above maps to one of those two documented causes.</div>
+        <div class="citation-item"><b>The compounding cost is real.</b> Powell et al. (2022) followed returning adopters: only about 1 in 10 ever adopted again, and behavioural returners were four times less likely to than medical returners.</div>
+        <div class="citation-item"><b>Why stability, not pure optimisation.</b> Wu et al. (2025, <i>JAMA Netw Open</i>) found a mixed-integer optimiser beats Gale–Shapley on ophthalmology-residency data — 78.4% vs 70.9% matched to a top-3 choice. That's a real trade-off: optimisation can raise average fit, but Gale–Shapley guarantees no shelter–applicant pair would rather defect. For a placement a household might return, we chose the guarantee.</div>
+        <div class="honesty-note"><b>Kyndra proposes; it doesn't decide.</b> Framed as odds, not outcomes: this reduces the odds staff overlook a bad pairing under time pressure, not "prevents returns." Human-baseline and 500-cohort randomized comparisons are still running ahead of Sept 13 — see the PRD for status.</div>
+      </div>
+    </section>
+
+    <section id="how">
+      <div class="section-head" style="margin-bottom:0; border-bottom:0; padding-bottom:0;">
+        <div><h2>Matching, without the black box.</h2></div>
+      </div>
+      <div class="explainer">
+        <div>
+          <h3 style="font-size:1.1rem; visibility:hidden; height:0; margin:0;">.</h3>
+          <p style="margin-top:0; max-width:44ch; color:var(--ink-soft);">Kyndra does not act as an AI decision-maker. It proposes a stable assignment with reasons. Staff remain in control, and hard constraints are treated as actual constraints, not just lower scores.</p>
+          <div class="reason">
+            <b>Why this matters</b>
+            A recommendation can be argued with. An opaque ranking can't.
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step"><b>01</b><div><strong>Filter impossible pairs</strong><br><span>Constraint violations are eliminated, not down-ranked.</span></div></div>
+          <div class="step"><b>02</b><div><strong>Derive both sides</strong><br><span>Applicant wants ≠ animal needs. Nobody hand-ranks a list.</span></div></div>
+          <div class="step"><b>03</b><div><strong>Find a stable match</strong><br><span>Gale–Shapley deferred acceptance settles the whole cohort at once.</span></div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="shelter">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="nav-logo"><svg class="logo-mark" viewBox="0 0 32 32"><use href="#paw-icon-light"/></svg>Kyndra</div>
+        <p>Transparent, explainable allocation for animal shelters. The system proposes; shelter staff decide.</p>
+      </div>
+      <div class="footer-links">
+        <div class="link-column">
+          <h4>Explore</h4>
+          <a href="#companions">Browse Cohort</a>
+          <a href="#how">How It Works</a>
+          <a href="#demo">Run the Engine</a>
+        </div>
+        <div class="link-column">
+          <h4>Transparency</h4>
+          <a href="#demo">Attempt a Swap</a>
+          <a href="#demo">Constraint Logic</a>
+          <a href="#demo">Equity Guardrail</a>
+        </div>
+        <div class="link-column">
+          <h4>Shelter Portal</h4>
+          <a href="#">Coordinator Login</a>
+          <a href="#">Intake Assessment</a>
+          <a href="#">Support Desk</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Kyndra. Simulated animals; real applicants. Prototype interface.</p>
+      <div class="legal-links"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Accessibility</a></div>
+    </div>
+  </footer>
+
+  <div class="modal-backdrop" id="modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="close" id="closeModal" aria-label="Close">×</button>
+      <div class="mini-pet" id="modalPet"></div>
+      <h2 id="modal-title">Pet details</h2>
+      <p id="modal-copy" style="color:var(--ink-soft); margin-top:10px;"></p>
+      <div class="reason">
+        <b>Match principle</b>
+        This profile is part of a simulated cohort. Kyndra uses documented hard constraints before preferences are considered.
+      </div>
+      <div class="modal-actions">
+        <button class="primary" id="startMatch">Continue to intake →</button>
+        <button class="secondary" id="closeModal2">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVG SILHOUETTE SYMBOLS — real crafted assets, no emoji -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <symbol id="paw-icon" viewBox="0 0 32 32">
+        <circle cx="16" cy="21" r="8" fill="#24231F"/>
+        <circle cx="7" cy="12" r="4" fill="#24231F"/>
+        <circle cx="16" cy="8" r="4.2" fill="#24231F"/>
+        <circle cx="25" cy="12" r="4" fill="#24231F"/>
+      </symbol>
+      <symbol id="paw-icon-light" viewBox="0 0 32 32">
+        <circle cx="16" cy="21" r="8" fill="#fff"/>
+        <circle cx="7" cy="12" r="4" fill="#fff"/>
+        <circle cx="16" cy="8" r="4.2" fill="#fff"/>
+        <circle cx="25" cy="12" r="4" fill="#fff"/>
+      </symbol>
+      <symbol id="dog-a" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="#F7F0E5"/>
+        <path d="M35 40c-4-8-12-10-14-4-2 5 3 10 8 11M65 40c4-8 12-10 14-4 2 5-3 10-8 11" fill="#24231F"/>
+        <ellipse cx="50" cy="55" rx="22" ry="19" fill="#24231F"/>
+        <circle cx="42" cy="50" r="3" fill="#F7F0E5"/>
+        <circle cx="58" cy="50" r="3" fill="#F7F0E5"/>
+        <ellipse cx="50" cy="60" rx="5" ry="4" fill="#F7F0E5"/>
+        <path d="M46 64q4 4 8 0" stroke="#F7F0E5" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="dog-b" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="#F7F0E5"/>
+        <path d="M30 35l6 18M70 35l-6 18" stroke="#24231F" stroke-width="9" stroke-linecap="round"/>
+        <ellipse cx="50" cy="56" rx="24" ry="20" fill="#24231F"/>
+        <circle cx="41" cy="50" r="3.2" fill="#F7F0E5"/>
+        <circle cx="59" cy="50" r="3.2" fill="#F7F0E5"/>
+        <ellipse cx="50" cy="61" rx="5" ry="4" fill="#F7F0E5"/>
+      </symbol>
+      <symbol id="cat-a" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="#F7F0E5"/>
+        <path d="M33 38l4-14 10 11M67 38l-4-14-10 11" fill="#24231F"/>
+        <ellipse cx="50" cy="56" rx="21" ry="18" fill="#24231F"/>
+        <circle cx="42" cy="52" r="2.6" fill="#F7F0E5"/>
+        <circle cx="58" cy="52" r="2.6" fill="#F7F0E5"/>
+        <path d="M50 58l-3 3h6z" fill="#F7F0E5"/>
+        <path d="M30 60h10M60 60h10M31 64h9M60 64h9" stroke="#24231F" stroke-width="1.5"/>
+      </symbol>
+      <symbol id="cat-b" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="#F7F0E5"/>
+        <path d="M35 36l3-13 9 10M65 36l-3-13-9 10" fill="#24231F"/>
+        <ellipse cx="50" cy="58" rx="19" ry="17" fill="#24231F"/>
+        <circle cx="43" cy="54" r="2.4" fill="#F7F0E5"/>
+        <circle cx="57" cy="54" r="2.4" fill="#F7F0E5"/>
+        <path d="M50 60l-2.5 2.5h5z" fill="#F7F0E5"/>
+      </symbol>
+      <symbol id="rabbit-a" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="#F7F0E5"/>
+        <path d="M38 42c-2-14-1-24 4-24s5 11 4 23M58 42c2-14 1-24-4-24s-5 11-4 23" fill="#24231F"/>
+        <ellipse cx="50" cy="58" rx="20" ry="17" fill="#24231F"/>
+        <circle cx="43" cy="55" r="2.6" fill="#F7F0E5"/>
+        <circle cx="57" cy="55" r="2.6" fill="#F7F0E5"/>
+        <ellipse cx="50" cy="62" rx="4" ry="3" fill="#F7F0E5"/>
+      </symbol>
+    </defs>
+  </svg>
+
+<script>
+/* =========================================================
+   Photo lookup — each simulated profile is paired with a real,
+   freely-licensed stock photo of the breed (not a specific
+   shelter's animal). Credited inline on the cohort cards.
+   ========================================================= */
+const PHOTOS = {
+  bruno:     "https://images.unsplash.com/photo-1571404569825-8c3b2c7dea9a",
+  luna:      "https://images.unsplash.com/photo-1596949995396-ed85d653faa0",
+  whiskers:  "https://images.unsplash.com/photo-1544076350-465637ebdf5a",
+  cinnamon:  "https://images.unsplash.com/photo-1668791627301-23690de58952",
+  perro:     "https://images.unsplash.com/photo-1580467277788-c6e040296602",
+  bella:     "https://images.unsplash.com/photo-1503777119540-ce54b422baff"
+};
+function photoUrl(id, size){
+  const src = PHOTOS[id] || PHOTOS.bruno;
+  return `${src}?auto=format&fit=crop&w=${size}&h=${size}&q=80`;
+}
+function iconSvg(id, size){
+  return `<img class="pet-thumb" src="${photoUrl(id, size*3)}" width="${size}" height="${size}" alt="" loading="lazy" style="border-radius:50%;object-fit:cover;display:block">`;
+}
+
+const petData = {
+  Bruno: { id:"bruno", text:"Long-stay example: Bruno has waited 340 days. The equity control can help surface him when fit is otherwise tied, but it can never override a hard constraint." },
+  Luna: { id:"luna", text:"Luna is a simulated young dog profile. Her final assignment depends on the household requirements and the shelter-side needs profile." },
+  Whiskers: { id:"whiskers", text:"Whiskers is a simulated cat profile. Compatibility is checked against the household before any preference ranking is applied." },
+  Cinnamon: { id:"cinnamon", text:"Cinnamon is a simulated small-pet profile. The same constraint-first logic applies across the cohort." },
+  Perro: { id:"perro", text:"Perro is a simulated dog profile. Kyndra derives applicant and shelter preferences independently rather than using one generic score." },
+  Bella: { id:"bella", text:"Bella is a simulated cat profile. The matching engine is designed to explain both successful pairings and eliminated alternatives." }
+};
+
+const modal = document.getElementById("modal");
+const modalTitle = document.getElementById("modal-title");
+const modalCopy = document.getElementById("modal-copy");
+const modalPet = document.getElementById("modalPet");
+
+document.querySelectorAll(".view-details-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const pet = btn.dataset.pet;
+    const data = petData[pet];
+    modalTitle.textContent = pet;
+    modalCopy.textContent = data.text;
+    modalPet.innerHTML = `<img src="${photoUrl(data.id, 220)}" alt="" loading="lazy">`;
+    modal.classList.add("open");
+  });
+});
+
+function closeModal(){ modal.classList.remove("open"); }
+document.getElementById("closeModal").onclick = closeModal;
+document.getElementById("closeModal2").onclick = closeModal;
+modal.addEventListener("click", e => { if(e.target === modal) closeModal(); });
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeModal(); });
+document.getElementById("startMatch").onclick = () => {
+  closeModal();
+  document.getElementById("demo").scrollIntoView({behavior:"smooth"});
+};
+
+/* =========================================================
+   HERO DOG SCRUB — mouse X position maps directly to the video's
+   timeline. The video is never played continuously; requestAnimationFrame
+   coalesces rapid mousemove events so seeking stays smooth.
+   ========================================================= */
+const heroDog = document.getElementById("heroDog");
+const heroDogVideo = document.getElementById("heroDogVideo");
+
+let heroTargetTime = 0;
+let heroSeekFrame = null;
+let heroVideoReady = false;
+let heroLastTime = -1;
+
+function seekHeroDog(){
+  heroSeekFrame = null;
+  if(!heroVideoReady || !Number.isFinite(heroDogVideo.duration) || heroDogVideo.duration <= 0) return;
+
+  const nextTime = Math.max(0, Math.min(heroDogVideo.duration - 0.001, heroTargetTime));
+
+  // Avoid redundant seeks when the pointer moves within the same video frame.
+  if(Math.abs(nextTime - heroLastTime) < 0.003) return;
+
+  heroLastTime = nextTime;
+  if(typeof heroDogVideo.fastSeek === "function"){
+    try {
+      heroDogVideo.fastSeek(nextTime);
+      return;
+    } catch(e) {}
+  }
+  heroDogVideo.currentTime = nextTime;
+}
+
+function queueHeroSeek(time){
+  heroTargetTime = time;
+  if(heroSeekFrame === null) heroSeekFrame = requestAnimationFrame(seekHeroDog);
+}
+
+function scrubHeroDog(clientX){
+  if(!heroVideoReady || !Number.isFinite(heroDogVideo.duration) || heroDogVideo.duration <= 0) return;
+
+  const progress = Math.max(0, Math.min(1, clientX / Math.max(1, window.innerWidth)));
+  
+  // Replace 2.0 with the exact timestamp (in seconds) where the left-to-right pan ends
+  const horizontalPanEndTime = 2.0; 
+  
+  // If the dog looks away from the cursor instead of toward it, use: (1 - progress) * horizontalPanEndTime
+  queueHeroSeek(progress * horizontalPanEndTime); 
+}
+
+heroDogVideo.addEventListener("loadedmetadata", () => {
+  heroVideoReady = Number.isFinite(heroDogVideo.duration) && heroDogVideo.duration > 0;
+  if(heroVideoReady){
+    heroDogVideo.currentTime = 0;
+    heroLastTime = 0;
+  }
+});
+
+heroDogVideo.addEventListener("error", () => {
+  heroVideoReady = false;
+});
+
+if (window.matchMedia("(pointer:fine)").matches) {
+  window.addEventListener("mousemove", e => scrubHeroDog(e.clientX), {passive:true});
+} else {
+  // Touch devices do not have a cursor, so show a calm middle frame.
+  heroDog.addEventListener("pointermove", e => {
+    if(e.pointerType === "touch" && heroVideoReady){
+      const rect = heroDog.getBoundingClientRect();
+      const progress = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      
+      const horizontalPanEndTime = 2.0; // Keep this consistent with the desktop function
+      queueHeroSeek(progress * horizontalPanEndTime);
+    }
+  }, {passive:true});
+}
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const filter = btn.dataset.filter;
+    document.querySelectorAll(".companion-card").forEach(card => {
+      const matches = filter === "all" ||
+        card.dataset.type === filter ||
+        (filter === "long" && Number(card.dataset.days) >= 100);
+      card.style.display = matches ? "" : "none";
+    });
+  });
+});
+
+/* =========================================================
+   MATCHING ENGINE — unchanged from the original build.
+   Hard constraints -> preference derivation -> Gale-Shapley
+   deferred acceptance, deterministic and order-independent.
+   ========================================================= */
+const ENERGY = { low:0, medium:1, high:2 };
+const CITE = {
+  behavioural: "Powell et al. 2021 — 35% of dog returns were behavioural incompatibility.",
+  petConflict: "Powell et al. 2021 — 18% of dog returns involved conflict with an existing household pet."
+};
+
+const ANIMALS = [
+  { id:"luna", name:"Luna", type:"dog", breed:"Golden Mix · 2 yrs", days:45, energy:"high",
+    hard:{}, soft:{ prefersExperienced:true } },
+  { id:"whiskers", name:"Whiskers", type:"cat", breed:"Shorthair · 3 yrs", days:60, energy:"low",
+    hard:{ noOtherDogs:true }, soft:{ prefersQuietHome:true }, why:[["noOtherDogs","behavioural"]] },
+  { id:"cinnamon", name:"Cinnamon", type:"small", breed:"Holland Lop · 1 yr", days:30, energy:"low",
+    hard:{ noOtherDogs:true, noOtherCats:true, requireExperience:true }, soft:{ prefersQuietHome:true } },
+  { id:"perro", name:"Perro", type:"dog", breed:"Schnauzer · 5 yrs", days:52, energy:"low",
+    hard:{ requireExperience:true, noYoungKids:true }, soft:{ prefersQuietHome:true } },
+  { id:"bella", name:"Bella", type:"cat", breed:"Longhair Calico · 2 yrs", days:25, energy:"low",
+    hard:{}, soft:{} },
+  { id:"bruno", name:"Bruno", type:"dog", breed:"Boxer Mix · 4 yrs", days:340, energy:"high",
+    hard:{ requireYard:true }, soft:{} },
+];
+
+const BASE_APPLICANTS = [
+  { id:"alvarez", label:"The Alvarez family", homeType:"yard", youngKids:true, otherPets:[], experience:"experienced", energyPref:"high", typePref:"dog", specificAnimal:null },
+  { id:"mika", label:"Mika", homeType:"apartment", youngKids:false, otherPets:[], experience:"first-time", energyPref:"high", typePref:"dog", specificAnimal:null },
+  { id:"osei", label:"The Osei family", homeType:"yard", youngKids:true, otherPets:["cat"], experience:"experienced", energyPref:"medium", typePref:"cat", specificAnimal:null },
+  { id:"priyatom", label:"Priya & Tom", homeType:"apartment", youngKids:false, otherPets:["cat"], experience:"first-time", energyPref:"low", typePref:"cat", specificAnimal:null },
+  { id:"deepa", label:"Deepa", homeType:"yard", youngKids:false, otherPets:[], experience:"experienced", energyPref:"low", typePref:"any", specificAnimal:null },
+  { id:"chenreyes", label:"The Chen-Reyes household", homeType:"apartment", youngKids:false, otherPets:[], experience:"first-time", energyPref:"low", typePref:"small", specificAnimal:null },
+];
+
+function hardReasons(animal, applicant){
+  const h = animal.hard, reasons = [];
+  if(h.requireYard && applicant.homeType !== "yard")
+    reasons.push({ text:`${animal.name} needs regular yard access to release energy safely; ${applicant.label || "you"} don't have a yard.`, cite:CITE.behavioural });
+  if(h.noOtherDogs && applicant.otherPets.includes("dog"))
+    reasons.push({ text:`${animal.name} can't be placed with a household that already has a dog.`, cite:CITE.petConflict });
+  if(h.noOtherCats && applicant.otherPets.includes("cat"))
+    reasons.push({ text:`${animal.name} can't be placed with a household that already has a cat.`, cite:CITE.petConflict });
+  if(h.noYoungKids && applicant.youngKids)
+    reasons.push({ text:`${animal.name}'s profile is not evaluated as safe around young children yet.`, cite:CITE.behavioural });
+  if(h.requireExperience && applicant.experience !== "experienced")
+    reasons.push({ text:`${animal.name} needs an experienced owner; first-time owners are excluded here.`, cite:CITE.behavioural });
+  return reasons;
+}
+function feasible(animal, applicant){ return hardReasons(animal, applicant).length === 0; }
+
+function wantScore(applicant, animal){
+  let s = 0;
+  if(applicant.typePref === animal.type) s += 2;
+  else if(applicant.typePref === "any") s += 1;
+  const diff = Math.abs(ENERGY[applicant.energyPref] - ENERGY[animal.energy]);
+  s += diff === 0 ? 2 : diff === 1 ? 1 : 0;
+  if(applicant.specificAnimal === animal.id) s += 100;
+  return s;
+}
+function needFitScore(animal, applicant){
+  let s = 0;
+  if(applicant.experience === "experienced") s += 2;
+  if(applicant.homeType === "yard") s += 1;
+  if(animal.soft.prefersQuietHome){
+    if(!applicant.youngKids) s += 1;
+    if(applicant.otherPets.length === 0) s += 1;
+  }
+  if(animal.soft.prefersExperienced && applicant.experience === "experienced") s += 1;
+  return s;
+}
+
+function applicantPrefList(applicant, dial, animals){
+  const feas = animals.filter(a => feasible(a, applicant));
+  const scored = feas.map(a => {
+    const base = wantScore(applicant, a);
+    const tieBonus = ((dial - 5) / 5) * (a.days / 340) * 0.45;
+    return { id:a.id, base, score: base + tieBonus, days:a.days };
+  });
+  scored.sort((x, y) => y.score - x.score || (x.days - y.days));
+  return scored.map(x => x.id);
+}
+function animalPrefList(animal, applicants){
+  const feas = applicants.filter(ap => feasible(animal, ap));
+  const scored = feas.map(ap => ({ id:ap.id, score:needFitScore(animal, ap) }));
+  scored.sort((x, y) => y.score - x.score || x.id.localeCompare(y.id));
+  return scored.map(x => x.id);
+}
+
+function runDeferredAcceptance(animals, applicants, dial){
+  const applicantPrefs = {}, animalPrefs = {};
+  applicants.forEach(ap => applicantPrefs[ap.id] = applicantPrefList(ap, dial, animals));
+  animals.forEach(a => animalPrefs[a.id] = animalPrefList(a, applicants));
+
+  const nextIdx = {}; applicants.forEach(ap => nextIdx[ap.id] = 0);
+  const held = {}, applicantMatch = {};
+  applicants.forEach(ap => applicantMatch[ap.id] = null);
+  let free = applicants.map(ap => ap.id).filter(id => applicantPrefs[id].length > 0);
+  let checks = 0;
+
+  while(free.length){
+    const apId = free.shift();
+    const prefs = applicantPrefs[apId];
+    if(nextIdx[apId] >= prefs.length) continue;
+    const animalId = prefs[nextIdx[apId]];
+    nextIdx[apId]++;
+    checks++;
+    if(!held[animalId]){
+      held[animalId] = apId; applicantMatch[apId] = animalId;
+    } else {
+      const rival = held[animalId];
+      const order = animalPrefs[animalId];
+      checks++;
+      if(order.indexOf(apId) < order.indexOf(rival)){
+        held[animalId] = apId; applicantMatch[apId] = animalId; applicantMatch[rival] = null;
+        if(nextIdx[rival] < applicantPrefs[rival].length) free.push(rival);
+      } else if(nextIdx[apId] < prefs.length){
+        free.push(apId);
+      }
+    }
+  }
+  return { held, applicantMatch, applicantPrefs, animalPrefs, checks };
+}
+
+function findBlockingPair(animals, applicants, result){
+  for(const a of animals){
+    for(const ap of applicants){
+      if(!feasible(a, ap)) continue;
+      const apCurrentAnimal = result.applicantMatch[ap.id];
+      const animalCurrentApp = result.held[a.id];
+      if(apCurrentAnimal === a.id) continue;
+      const apWantsA = wantScore(ap, a) > (apCurrentAnimal ? wantScore(ap, animals.find(x=>x.id===apCurrentAnimal)) : -1);
+      const animalWantsAp = !animalCurrentApp || needFitScore(a, ap) > needFitScore(a, applicants.find(x=>x.id===animalCurrentApp));
+      if(apWantsA && animalWantsAp) return { animal:a.id, applicant:ap.id };
+    }
+  }
+  return null;
+}
+
+// ---- UI state ----
+let currentApplicants = BASE_APPLICANTS.slice();
+let lastResult = null;
+let currentDial = 0;
+const you = { id:"you", label:"You", homeType:"yard", youngKids:false, otherPets:[], experience:"first-time", energyPref:"medium", typePref:"any", specificAnimal:null };
+
+document.querySelectorAll(".pill-group").forEach(group => {
+  group.addEventListener("click", e => {
+    const btn = e.target.closest(".pill");
+    if(!btn) return;
+    group.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    btn.classList.add("selected");
+  });
+});
+function pillValue(id){ return document.querySelector(`#${id} .pill.selected`).dataset.value; }
+
+function animalById(id){ return ANIMALS.find(a => a.id === id); }
+function applicantById(id, pool){ return (pool || currentApplicants).find(a => a.id === id) || (id === "you" ? you : null); }
+
+function renderResults(result, animals, applicants, dial){
+  const matched = animals.filter(a => result.held[a.id]).length;
+  document.getElementById("statMatched").textContent = matched;
+  document.getElementById("statUnmatched").textContent = animals.length - matched;
+  document.getElementById("statChecks").textContent = result.checks;
+  document.getElementById("impactChecks").textContent = animals.length * applicants.length;
+
+  const list = document.getElementById("matchList");
+  list.innerHTML = "";
+  animals.forEach(a => {
+    const apId = result.held[a.id];
+    const row = document.createElement("div");
+    row.className = "match-row" + (!apId ? " unmatched-row" : "") + (apId === "you" ? " is-you" : "");
+    const applicant = apId ? applicantById(apId, applicants) : null;
+    row.innerHTML = `
+      <div class="match-avatar">${iconSvg(a.id, 22)}</div>
+      <div class="match-info">
+        <b>${a.name}</b>
+        <p>${a.days} days waiting</p>
+      </div>
+      <div class="match-person">${applicant ? (applicant.id === "you" ? "You" : applicant.label) : "Unmatched"}${apId ? ' <span class="proof-stamp matched" style="margin-left:6px; vertical-align:middle;">Matched</span>' : ''}</div>
+      <button class="why-btn" data-animal="${a.id}">Details</button>
+    `;
+    list.appendChild(row);
+    const detail = document.createElement("div");
+    detail.className = "why-detail";
+    detail.id = `why-${a.id}`;
+    list.appendChild(detail);
+  });
+
+  list.querySelectorAll(".why-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.animal;
+      const detail = document.getElementById(`why-${id}`);
+      const isOpen = detail.classList.contains("open");
+      list.querySelectorAll(".why-detail").forEach(d => d.classList.remove("open"));
+      if(isOpen) return;
+      detail.innerHTML = buildWhyNot(id, result, applicants);
+      detail.classList.add("open");
+    });
+  });
+
+  // unmatched analysis
+  const unmatchedBox = document.getElementById("unmatchedList");
+  unmatchedBox.innerHTML = "";
+  const unmatchedAnimals = animals.filter(a => !result.held[a.id]);
+  if(unmatchedAnimals.length === 0){
+    unmatchedBox.innerHTML = `<div class="unmatched-item">Every animal in the cohort matched this run.</div>`;
+  } else {
+    unmatchedAnimals.forEach(a => {
+      const need = describeMissingProfile(a);
+      const item = document.createElement("div");
+      item.className = "unmatched-item";
+      item.innerHTML = `<div class="ua">${iconSvg(a.id, 18)}</div><div><b>${a.name}</b>No applicant in this pool ${need}. That's the profile this shelter needs to recruit for ${a.name}.</div>`;
+      unmatchedBox.appendChild(item);
+    });
+  }
+
+  // impact panel
+  updateImpact(animals, applicants, result);
+
+  // swap selects
+  const matchedAnimals = animals.filter(a => result.held[a.id]);
+  [ "swapA", "swapB" ].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = matchedAnimals.map(a => `<option value="${a.id}">${a.name}</option>`).join("");
+  });
+  if(matchedAnimals.length > 1) document.getElementById("swapB").selectedIndex = 1;
+  document.getElementById("swapResult").classList.remove("show");
+  document.getElementById("stabilityResult").classList.remove("show");
+
+  document.getElementById("resultsEmpty").style.display = "none";
+  document.getElementById("resultsBoard").classList.add("visible");
+  document.getElementById("postMatchTools").style.display = "grid";
+}
+
+function describeMissingProfile(animal){
+  const needs = [];
+  if(animal.hard.requireYard) needs.push("has a yard");
+  if(animal.hard.requireExperience) needs.push("is an experienced owner");
+  if(animal.hard.noYoungKids) needs.push("has no young children");
+  if(animal.hard.noOtherDogs) needs.push("has no dog already at home");
+  if(animal.hard.noOtherCats) needs.push("has no cat already at home");
+  if(needs.length === 0) return "wanted this profile more than a better-fitting animal already in the pool";
+  return "combined " + needs.join(" and ");
+}
+
+function buildWhyNot(animalId, result, applicants){
+  const animal = animalById(animalId);
+  const matchedId = result.held[animalId];
+  let html = "";
+  applicants.forEach(ap => {
+    if(ap.id === matchedId) return;
+    const reasons = hardReasons(animal, ap);
+    const label = ap.id === "you" ? "You" : ap.label;
+    if(reasons.length){
+      html += `<div><b>${label}:</b> ${reasons[0].text}<span class="cite">${reasons[0].cite}</span></div>`;
+    } else {
+      html += `<div><b>${label}:</b> feasible, but ${matchedId ? "ranked lower on fit than " + (applicantById(matchedId, applicants).id === "you" ? "you" : applicantById(matchedId, applicants).label) : "the animal had no proposals reach it this run"}.</div>`;
+    }
+  });
+  return html || "No other applicants in this pool were considered.";
+}
+
+function updateImpact(animals, applicants, result, mode){
+  mode = mode || (document.getElementById("btnOptimistic").classList.contains("active") ? "optimistic" : "conservative");
+  const matched = animals.filter(a => result.held[a.id]).length;
+  const rate = mode === "conservative" ? 0.163 : 0.163 + 0.35 * 0.3;
+  const projected = (matched * rate).toFixed(1);
+  document.getElementById("impactWelfare").textContent = `~${projected}`;
+}
+
+document.getElementById("btnConservative").addEventListener("click", function(){
+  this.classList.add("active"); document.getElementById("btnOptimistic").classList.remove("active");
+  if(lastResult) updateImpact(ANIMALS, currentApplicants, lastResult, "conservative");
+});
+document.getElementById("btnOptimistic").addEventListener("click", function(){
+  this.classList.add("active"); document.getElementById("btnConservative").classList.remove("active");
+  if(lastResult) updateImpact(ANIMALS, currentApplicants, lastResult, "optimistic");
+});
+
+document.getElementById("runMatch").addEventListener("click", () => {
+  const specific = pillValue("specificGroup") || null;
+  you.homeType = pillValue("homeGroup");
+  you.youngKids = pillValue("kidsGroup") === "yes";
+  you.otherPets = pillValue("petsGroup") ? [pillValue("petsGroup")] : [];
+  you.experience = pillValue("expGroup");
+  you.energyPref = pillValue("energyGroup");
+  you.typePref = specific ? animalById(specific).type : "any";
+  you.specificAnimal = specific;
+
+  currentApplicants = BASE_APPLICANTS.concat([you]);
+  currentDial = Number(document.getElementById("equityDial").value);
+  lastResult = runDeferredAcceptance(ANIMALS, currentApplicants, currentDial);
+  renderResults(lastResult, ANIMALS, currentApplicants, currentDial);
+  document.getElementById("resultsBoard").scrollIntoView({behavior:"smooth", block:"nearest"});
+});
+
+document.getElementById("runSwap").addEventListener("click", () => {
+  if(!lastResult) return;
+  const idA = document.getElementById("swapA").value, idB = document.getElementById("swapB").value;
+  const box = document.getElementById("swapResult");
+  const stampHtml = (label) => `<span class="proof-stamp blocked" style="margin-bottom:8px;">${label}</span><br>`;
+  if(idA === idB){
+    box.className = "swap-result show fail"; box.innerHTML = "Pick two different animals to attempt a swap.";
+    return;
+  }
+  const animalA = animalById(idA), animalB = animalById(idB);
+  const apA = applicantById(lastResult.held[idA], currentApplicants);
+  const apB = applicantById(lastResult.held[idB], currentApplicants);
+  const nameA = apA.id === "you" ? "you" : apA.label, nameB = apB.id === "you" ? "you" : apB.label;
+
+  const aToB = hardReasons(animalB, apA);
+  const bToA = hardReasons(animalA, apB);
+  if(aToB.length || bToA.length){
+    const reason = (aToB[0] || bToA[0]).text;
+    box.className = "swap-result show fail";
+    box.innerHTML = stampHtml("Blocked") + `It's not even feasible. ${reason}`;
+    return;
+  }
+  const aPrefersB = wantScore(apA, animalB) > wantScore(apA, animalA);
+  const bPrefersA = wantScore(apB, animalA) > wantScore(apB, animalB);
+  const animalBPrefersA = needFitScore(animalB, apA) > needFitScore(animalB, apB);
+  const animalAPrefersB = needFitScore(animalA, apB) > needFitScore(animalA, apA);
+  if(aPrefersB && animalBPrefersA){
+    box.className = "swap-result show fail";
+    box.innerHTML = stampHtml("Check failed") + `Swap would actually improve things for ${nameA} and ${animalB.name} — that would mean the current match wasn't stable. (If you see this, tell us — it's a bug.)`;
+  } else if(bPrefersA && animalAPrefersB){
+    box.className = "swap-result show fail";
+    box.innerHTML = stampHtml("Check failed") + `Swap would actually improve things for ${nameB} and ${animalA.name} — that would mean the current match wasn't stable. (If you see this, tell us — it's a bug.)`;
+  } else {
+    box.className = "swap-result show fail";
+    box.innerHTML = stampHtml("Blocked") + `At least one side would be worse off. ${nameA} ↔ ${animalB.name} and ${nameB} ↔ ${animalA.name} — neither pair prefers the swap enough to abandon their current match. No blocking pair, no incentive to defect.`;
+  }
+  box.classList.add("show");
+});
+
+document.getElementById("verifyStability").addEventListener("click", () => {
+  const box = document.getElementById("stabilityResult");
+  if(!lastResult){
+    box.className = "swap-result show fail"; box.textContent = "Run the matching engine first.";
+    return;
+  }
+  const blocking = findBlockingPair(ANIMALS, currentApplicants, lastResult);
+  if(blocking){
+    box.className = "swap-result show fail";
+    box.innerHTML = `<span class="proof-stamp blocked" style="margin-bottom:8px;">Check failed</span><br>Blocking pair found: ${blocking.applicant} and ${blocking.animal} would rather match each other. (Report this — it shouldn't happen.)`;
+  } else {
+    box.className = "swap-result show pass";
+    box.innerHTML = `<span class="proof-stamp stable" style="margin-bottom:8px;">Stable</span><br>No blocking pair exists across the full cohort. Every unmatched pair is unmatched because at least one side prefers their current assignment — or the pair was never feasible.`;
+  }
+  box.classList.add("show");
+});
+
+const dialInput = document.getElementById("equityDial");
+dialInput.addEventListener("input", () => {
+  document.getElementById("dialValue").textContent = dialInput.value;
+  if(!lastResult) return;
+  currentDial = Number(dialInput.value);
+  const before = lastResult;
+  const after = runDeferredAcceptance(ANIMALS, currentApplicants, currentDial);
+  lastResult = after;
+  renderResults(after, ANIMALS, currentApplicants, currentDial);
+
+  const changed = ANIMALS.filter(a => before.held[a.id] !== after.held[a.id]);
+  const outcome = document.getElementById("dialOutcome");
+  if(changed.length === 0){
+    outcome.textContent = "No change at this setting — nobody in the current pool is tied closely enough for the dial to matter.";
+  } else {
+    outcome.innerHTML = changed.map(a => {
+      const now = after.held[a.id] ? (applicantById(after.held[a.id], currentApplicants).id === "you" ? "you" : applicantById(after.held[a.id], currentApplicants).label) : "unmatched";
+      return `<b>${a.name}</b> (${a.days} days waiting) → now ${now}`;
+    }).join("<br>");
+  }
+});
+</script>
+</body>
+</html>
