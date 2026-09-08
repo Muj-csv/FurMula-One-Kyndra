@@ -31,12 +31,14 @@ Browser — static SPA on Vercel Hobby
 │     random.ts        → cohort generator (property tests AND the aggregate)
 │
 ├── UI (React)
-└── PERSISTENCE  localStorage only
+└── PERSISTENCE  none — React state only, see §12
 
-No server. No database. No API calls. No device permissions. No key.
+No server. No database. No required API calls. No device permissions. No key.
 ```
 
-**Design consequence:** there is no network path in the critical flow. The demo cannot fail on a rate limit, a cold start, a down third-party service, or an expired token. The only live failure mode is a browser crash.
+**Design consequence:** there is no network path in the critical flow — the matching experience (intake → derive → match → results) never depends on a network call succeeding. The demo cannot fail on a rate limit, a cold start, a down third-party service, or an expired token. The only live failure mode is a browser crash.
+
+**Amendment (P1-1):** one optional, participant-consented exception exists — §12 documents it. It is additive and never sits in the critical path: with no endpoint configured the statement above is exactly true, and with one configured, the core matching flow still does not depend on it succeeding, or on it existing at all.
 
 # 2. Stack
 
@@ -45,7 +47,7 @@ No server. No database. No API calls. No device permissions. No key.
 | Framework | Vite + React + TypeScript | Lightest static build; Vercel autodetects; no Expo output-mode complexity |
 | Engine | Pure TS, zero deps | Testable in isolation; the property tests *are* the correctness claim |
 | Tests | Vitest | Randomised property tests, demoable |
-| State | React state + `localStorage` | No server, no store library needed |
+| State | React state only | No server, no store library needed. Nothing persists across a refresh — see §12 for why that is intentional, not a gap |
 | Styling | Tailwind or plain CSS | Either. Don't spend time here |
 | Animation | CSS transitions | The greedy→stable transition needs no library |
 | Host | Vercel Hobby | Free; personal non-commercial use — a hackathon entry qualifies |
@@ -424,3 +426,89 @@ export const HUMAN_BASELINE = {
 **Rolling mode.** Re-run against unmatched animals when one applicant arrives mid-cycle. Same engine, different call.
 
 **Staff-verified flags.** Self-reported fields like experience level would carry a verification flag the ranking weights more heavily.
+
+# 12. Optional research capture (P1-1)
+
+**No persistence exists anywhere in the core app, and that is deliberate, not an oversight.**
+`cohort` lives in one `useState` in `App.tsx`. A refresh, a closed tab, or a browser
+restart loses every local edit — added households, added animals, removed records —
+and returns to the bundled `COHORT` from `src/data/cohort.ts`. This is intentional:
+the property tests prove things about *that* committed cohort, and the board rehearsed
+before the demo has to be the board presented during it. A visitor's edit is a demo
+feature that lives in memory for their visit, not a database write. `localStorage` is
+not used anywhere in `src/` — an earlier draft of this document said it was; it wasn't,
+and the claim has been corrected here rather than implemented, per the same
+inspectable-over-convenient bias as the rest of this document.
+
+**One narrow, optional exception sits beside this, never inside it: research capture.**
+A household filling in "Add a household" on the *deployed* app may tick a consent
+checkbox to share their answers with the team for the applicant survey (PRD P1-1). When
+they do, the browser fires a single POST to an external, team-owned collector (a Google
+Apps Script web app, or a free-tier hosted form service). Full implementation:
+`src/data/surveyCapture.ts`; UI: `src/components/ApplicantIntake.tsx`; operational
+walkthrough: `research/applicant-survey.md`.
+
+**Why this does not reopen "no server, no database":**
+- The core matching flow (intake → derive → match → results) never awaits this request,
+  never branches on its result, and works identically whether it succeeds, fails, or
+  never fires at all — because no endpoint is configured by default.
+- There is still no server *Kyndra operates*. The collector is a third-party address the
+  client POSTs to; Vercel still serves a static build with no serverless function.
+- There is still no database *the app reads from*. The external collector is
+  write-only from the app's perspective — nothing the app shows a user is ever read back
+  from it. It is a research collection mechanism, not a data source.
+- There is still no env var and no secret. The endpoint is a public constant
+  (`SURVEY_ENDPOINT` in `surveyCapture.ts`) shipped in the client bundle by design: it is
+  a write-only collection address, not a credential.
+- **Consent-gated:** the sharing checkbox exists only when `SURVEY_ENDPOINT` is
+  non-empty, and even then only submits when the household explicitly ticks it.
+
+**The data flow, end to end — external submissions never touch the deployed app automatically:**
+
+```
+Participant fills "Add a household" on the deployed app
+  → ticks the optional consent checkbox (only rendered if capture is configured)
+  → browser POSTs a research payload to the external collector
+  → collector appends one row to a Sheet/table the team owns
+  → [nothing here changes the live site — the deployed cohort is still the
+     committed src/data/cohort.ts, unaffected by what the Sheet contains]
+  → researcher reviews the Sheet by hand, at a time of their choosing
+  → responses normalised where needed (typos, out-of-range values)
+  → node scripts/csv-to-applicants.mjs converts approved rows to Applicant
+    object literals, with surveyed: true baked in
+  → a person pastes the reviewed literals into APPLICANTS in cohort.ts
+  → commit, redeploy — NOW the real data is in the bundled build
+```
+
+A response existing in the external collector is not the same thing as a response being
+in the app. Nothing makes that promotion automatic, and nothing should: an unreviewed
+row could carry a typo (`"experience": 50`) or bad-faith input, and the property tests
+are a guarantee about the *committed* cohort, not about whatever a stranger last typed
+into a form.
+
+**`specificAnimalId` is not flattened into a general preference.** A respondent who says
+they came for a named animal (`specificAnimalId: 'bruno'`) is recording a different kind
+of signal than one who states `prefersSpecies`/`prefersAge`/`prefersEnergy` — Architecture
+§6 STEP 2 already treats a stated specific animal as an unconditional rank-1, never a
+score. The survey payload preserves this distinction exactly: `specificAnimalId` travels
+as its own field, empty string standing in for `null` (never conflated with "no
+preference" on species/age/energy, which are three separate fields of their own).
+
+**Payload integrity, without inventing infrastructure.** Every submission carries:
+- `responseId` — a client-generated UUID, so a researcher can spot an accidental
+  double-submission without anything that identifies the person.
+- `surveyVersion` — a dated string (`SURVEY_VERSION` in `surveyCapture.ts`), bumped
+  whenever a question's meaning or structure changes, so a later analysis never silently
+  mixes two incompatible instruments.
+- `consent: 'yes'` — the payload is only ever constructed after the checkbox is ticked,
+  and this field records that fact on the row itself, not just in the code path that
+  produced it.
+
+No name, email, or other identifying field is collected beyond whatever the respondent
+volunteers in the free-text "Household name" box, which is not required.
+
+**What is deliberately not built.** No account system, no database the app queries, no
+server-side validation, no analytics platform, no dashboard beyond the Sheet/table itself.
+The researcher reviewing responses and pasting approved ones into `cohort.ts` *is* the
+review step — adding software to automate it would be exactly the kind of infrastructure
+this architecture exists to avoid for a ~20-response survey.
