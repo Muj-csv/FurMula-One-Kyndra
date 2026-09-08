@@ -1,9 +1,12 @@
-// Footer — ported from Frontend/shared.js's FOOTER_HTML, wired to the same
-// in-app navigation as NavBar instead of four separate HTML files.
+// Footer — ported from Frontend/shared.js's FOOTER_HTML.
+//
+// The FOOTER_HTML prototype had a link-columns section (Browse Cohort / How
+// It Works / Run the Engine / Attempt a Swap / Evidence) that only duplicated
+// the NavBar's own navigation — every one of those destinations is already a
+// button in the nav above. Removed rather than kept as a second, redundant
+// way to reach the same four pages.
 
-import type { Page } from './NavBar';
-
-export function Footer({ onNavigate }: { onNavigate: (page: Page) => void }) {
+export function Footer() {
   return (
     <footer className="site-footer">
       <div className="footer-content">
@@ -16,32 +19,21 @@ export function Footer({ onNavigate }: { onNavigate: (page: Page) => void }) {
           </div>
           <p>Transparent, explainable allocation for animal shelters. The system proposes; shelter staff decide.</p>
         </div>
-        <div className="footer-links">
-          <div className="link-column">
-            <h4>Explore</h4>
-            <button type="button" onClick={() => onNavigate('cohort')}>
-              Browse Cohort
-            </button>
-            <button type="button" onClick={() => onNavigate('home')}>
-              How It Works
-            </button>
-            <button type="button" onClick={() => onNavigate('match')}>
-              Run the Engine
-            </button>
-          </div>
-          <div className="link-column">
-            <h4>Transparency</h4>
-            <button type="button" onClick={() => onNavigate('match')}>
-              Attempt a Swap
-            </button>
-            <button type="button" onClick={() => onNavigate('evidence')}>
-              Evidence
-            </button>
-          </div>
-        </div>
       </div>
+      {/* Phase 1 (Frontend/REVISION-PHASES.md): the previous bottom line
+          ("Simulated animals; real applicants...") is already stated
+          prominently at the top of every page via App.tsx's provenance
+          banner (PRD §3.1) — this row carries the standard footer-bottom
+          content instead: copyright and legal labels. The labels are plain
+          text, not links, since there are no real destination pages for
+          them yet. */}
       <div className="footer-bottom">
-        <p>Simulated animals; real applicants. Prototype interface.</p>
+        <p>&copy; {new Date().getFullYear()} Kyndra. All rights reserved.</p>
+        <div className="legal-links">
+          <span>Privacy Policy</span>
+          <span>Terms of Use</span>
+          <span>Accessibility</span>
+        </div>
       </div>
     </footer>
   );

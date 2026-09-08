@@ -976,62 +976,80 @@ p {
   width: 30px;
   height: 30px;
   flex-shrink: 0;
+  object-fit: contain;
 }
 
 .nav-links {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   flex: 1;
   justify-content: center;
 }
 
+/* Phase 1 (Frontend/REVISION-PHASES.md): translucent tile buttons, not
+   plain underlined text — same color tokens as the rest of the page
+   (terracotta accent, paper-warm/line for the resting tile). */
 .nav-link {
-  padding: 9px 13px;
+  padding: 9px 15px;
   border-radius: var(--radius-sm);
   color: var(--ink-soft);
   font-size: 0.92rem;
   font-weight: 600;
-  position: relative;
-  transition: color 0.2s ease, transform 0.12s;
   cursor: pointer;
-}
-
-.nav-link::after {
-  content: '';
-  position: absolute;
-  left: 13px;
-  right: 13px;
-  bottom: 2px;
-  height: 2px;
-  background: var(--terracotta);
-  opacity: 0;
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+  background: color-mix(in srgb, var(--paper-warm) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  backdrop-filter: blur(6px);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.12s;
 }
 
 .nav-link:hover {
   color: var(--ink);
-}
-
-.nav-link:hover::after {
-  opacity: 1;
-  transform: scaleX(1);
+  border-color: var(--ink-faint);
 }
 
 .nav-link.active {
-  color: var(--ink);
+  color: var(--terracotta-strong);
+  background: var(--terracotta-tint);
+  border-color: var(--terracotta);
 }
 
-.nav-link.active::after {
-  opacity: 1;
-  transform: scaleX(1);
+.nav-link:active {
+  transform: scale(0.97);
 }
 
 .nav-actions {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+/* Notification / profile placeholders — Phase 1. Round tile, same
+   translucent treatment as the nav-link tiles, icon-only. */
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--paper-warm) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  cursor: default;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.12s;
+}
+
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.icon-button:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.icon-button:active {
+  transform: scale(0.94);
 }
 
 .quiz-link {
@@ -1045,10 +1063,6 @@ p {
 
 .quiz-link:hover {
   background: var(--terracotta-strong);
-}
-
-.quiz-link::after {
-  content: none;
 }
 
 main.page {
@@ -1621,38 +1635,6 @@ main.page {
   line-height: 1.6;
 }
 
-.footer-links {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 40px;
-}
-
-.link-column h4 {
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--terracotta);
-  margin: 0 0 14px;
-  font-weight: 700;
-}
-
-.link-column button,
-.link-column a {
-  display: block;
-  color: #b8b0a0;
-  margin: 9px 0;
-  font-size: 0.88rem;
-  text-align: left;
-  padding: 0;
-  background: none;
-  border: 0;
-}
-
-.link-column button:hover,
-.link-column a:hover {
-  color: #fff;
-}
-
 .footer-bottom {
   display: flex;
   justify-content: space-between;
@@ -1662,6 +1644,13 @@ main.page {
   padding-top: 20px;
   color: #9a9385;
   font-size: 0.78rem;
+}
+
+/* Plain text, not links — there are no real destination pages for these
+   yet (Phase 1, Frontend/REVISION-PHASES.md). */
+.legal-links {
+  display: flex;
+  gap: 18px;
 }
 
 @media (max-width: 900px) {
@@ -1785,9 +1774,6 @@ main.page {
   .section-head {
     flex-direction: column;
     align-items: flex-start;
-  }
-  .footer-links {
-    grid-template-columns: 1fr;
   }
   .footer-bottom {
     flex-direction: column;

@@ -7,9 +7,9 @@
 export type Page = 'home' | 'cohort' | 'match' | 'evidence';
 
 const LINKS: { page: Page; label: string }[] = [
+  { page: 'home', label: 'Overview' },
   { page: 'cohort', label: 'Explore Cohort' },
   { page: 'match', label: 'Try Matching' },
-  { page: 'home', label: 'Overview' },
   { page: 'evidence', label: 'Evidence' },
 ];
 
@@ -17,9 +17,7 @@ export function NavBar({ page, onNavigate }: { page: Page; onNavigate: (page: Pa
   return (
     <nav className="top-nav" aria-label="Primary navigation">
       <button type="button" className="nav-logo" onClick={() => onNavigate('home')}>
-        <svg className="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
-          <use href="#paw-icon" />
-        </svg>
+        <img className="logo-mark" src="/kyndra-logo.png" alt="" aria-hidden="true" />
         Kyndra
       </button>
 
@@ -39,6 +37,19 @@ export function NavBar({ page, onNavigate }: { page: Page; onNavigate: (page: Pa
       <div className="nav-actions">
         <button type="button" className="nav-link quiz-link" onClick={() => onNavigate('match')}>
           Try Matching
+        </button>
+
+        {/* Placeholder only — Phase 1 (Frontend/REVISION-PHASES.md). No
+            behaviour, no backend yet; wiring these up is a separate task. */}
+        <button type="button" className="icon-button" aria-label="Notifications" title="Notifications — coming soon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <use href="#bell-icon" />
+          </svg>
+        </button>
+        <button type="button" className="icon-button" aria-label="Profile" title="Profile — coming soon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <use href="#profile-icon" />
+          </svg>
         </button>
       </div>
     </nav>

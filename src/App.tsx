@@ -122,7 +122,7 @@ export function App() {
       ) : null}
       {page === 'evidence' ? <EvidencePage cohort={cohort} outcome={outcome} onNavigate={navigate} /> : null}
 
-      <Footer onNavigate={navigate} />
+      <Footer />
     </>
   );
 }
