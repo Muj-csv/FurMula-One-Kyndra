@@ -7,7 +7,7 @@
 // Nobody hand-ranks a list. Everything below the first question is a household
 // fact or a stated want; the engine derives both orders from them.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Animal, Applicant } from '../engine';
 import {
   isSurveyCaptureEnabled,
@@ -56,12 +56,34 @@ export function ApplicantIntake({
   const [share, setShare] = useState(false);
   const [status, setStatus] = useState<ShareStatus>('idle');
 
+  // Guards against a double submit producing a real bug, not just a UI
+  // annoyance: `nextId` is a prop the PARENT computes from its own cohort
+  // state, so two submit() calls that both run before that parent state
+  // update lands would both see the SAME `nextId` and add two applicants
+  // sharing one id — the exact "duplicate id" corruption data/cohortEdit.ts
+  // warns about, silently overwriting one in the engine's preference maps.
+  // `isSubmitting` locks the button the instant it is clicked and only
+  // unlocks once `nextId` itself changes, which is the actual proof the
+  // parent has caught up — not a timer, not a guess.
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  useEffect(() => {
+    setIsSubmitting(false);
+  }, [nextId]);
+
   const set = <K extends keyof Applicant>(key: K, value: Applicant[K]) =>
     setForm((previous) => ({ ...previous, [key]: value }));
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const name = form.name.trim() === '' ? `Household ${nextId}` : form.name.trim();
+    // `surveyed` stays false on the LOCAL record even when `share` is ticked —
+    // `blankApplicant` never sets it otherwise, and it is not touched here. That
+    // flag means "reviewed and committed to cohort.ts as a real response" (see
+    // Architecture §12), which a click in this session cannot make true. Only
+    // scripts/csv-to-applicants.mjs sets it, and only for rows a person reviewed.
     const applicant: Applicant = { ...form, id: nextId, name };
 
     // Local first, and unconditionally. The household enters the cohort and the
@@ -245,13 +267,20 @@ export function ApplicantIntake({
 
       {captureEnabled ? (
         <fieldset className="intake__consent">
-          <legend>Helping our research?</legend>
+          <legend>Help our research? (completely optional)</legend>
           <p className="intake__hint">
-            Kyndra is a hackathon project and the animals above are{' '}
-            <strong>simulated</strong>. This is not an adoption application and you are not
-            applying for a real animal. Tick the box and the household details you just
-            entered are sent to our team, and may be shown as part of the demo cohort.
-            Leave it unticked and nothing leaves your browser.
+            Kyndra works the same either way — the match below uses what you entered
+            whether or not you tick this box. Kyndra is a hackathon project and the
+            animals above are <strong>simulated</strong>; this is not an adoption
+            application and you are not applying for a real animal.
+          </p>
+          <p className="intake__hint">
+            Ticking the box sends only the household answers above (home type, yard,
+            hours away, children, other pets, experience, medication, size limit, and
+            your stated preferences) to our team, to evaluate and improve Kyndra's
+            matching research. No name is required, and we don't collect anything
+            beyond these answers. Assume nothing was sent unless you see a confirmation
+            below after submitting — a failed send never stops your match from running.
           </p>
           <label className="check">
             <input
@@ -264,7 +293,7 @@ export function ApplicantIntake({
         </fieldset>
       ) : null}
 
-      <button type="submit" className="button">
+      <button type="submit" className="button" disabled={isSubmitting}>
         Add household
       </button>
 

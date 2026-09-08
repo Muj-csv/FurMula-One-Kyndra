@@ -1,6 +1,10 @@
 // Survey capture — P1-1. One-directional: the deployed app can SEND a real
 // household to the team. Nothing ever comes back.
 //
+// Full data-flow diagram and the "why this doesn't reopen no-server/no-database"
+// argument: Architecture §12. This header covers the same ground more tersely,
+// for whoever is only reading this file.
+//
 // ─── WHY THIS IS NOT A DATABASE ────────────────────────────────────────────
 //
 // The cohort judges see is the committed array in cohort.ts, and it has to
@@ -83,6 +87,26 @@ export type CaptureTransport = 'json' | 'beacon';
 export const SURVEY_TRANSPORT: CaptureTransport = 'beacon';
 
 /**
+ * Dated survey instrument version. Bump this — never edit a question's
+ * meaning in place — whenever a question's wording or structure changes
+ * enough that an old response and a new one should not be pooled in the same
+ * analysis. A researcher reconciling the Sheet against `cohort.ts` reads this
+ * column to know which rows came from which instrument.
+ */
+export const SURVEY_VERSION = '2026-09-v1';
+
+/**
+ * ⚠ WHY THIS IS THREE FLAT CONSTANTS, NOT ONE `researchCapture` OBJECT.
+ *
+ * A nested config object (`{ enabled, endpoint, surveyVersion }`) was
+ * considered and rejected: `enabled` would just be a derived re-statement of
+ * "is `endpoint` non-empty", which is exactly the redundancy
+ * `isSurveyCaptureEnabled()` exists to compute once, correctly, from the one
+ * fact that actually varies. Three named exports plus one derived function
+ * say the same thing with nothing that can drift out of sync with itself.
+ */
+
+/**
  * One response, shaped for the CSV the converter already reads.
  *
  * ⚠ KEYS AND ORDER MUST MATCH `REQUIRED_HEADERS` in
@@ -97,6 +121,20 @@ export const SURVEY_TRANSPORT: CaptureTransport = 'beacon';
  * whatever is already in cohort.ts, and bakes in `surveyed: true` because
  * every row it reads is a real response. Sending them from here would invite
  * exactly the backfilled flag that cohort.ts warns against.
+ *
+ * `specificAnimalId` travels as its own field, distinct from
+ * `prefersSpecies`/`prefersAge`/`prefersEnergy` — a named claim on one animal
+ * is a different signal from a general preference (Architecture §6 STEP 2:
+ * a stated specific animal is an unconditional rank 1, never a score), and
+ * this payload never collapses the two into one representation.
+ *
+ * `responseId`, `surveyVersion`, and `consent` are integrity metadata, not
+ * survey questions — they exist so a researcher can spot a duplicate, know
+ * which instrument a row came from, and see on the row itself that consent
+ * was given. They are appended AFTER the required columns rather than
+ * interleaved, so the ordering `tests/survey-capture.test.ts` checks against
+ * `REQUIRED_HEADERS` is unaffected — the converter already ignores any
+ * column it does not require (see `submittedAt` below, same treatment).
  */
 export interface SurveyPayload {
   name: string;
@@ -114,9 +152,25 @@ export interface SurveyPayload {
   prefersEnergy: number | string;
   /** Extra column — the converter ignores headers it does not require. */
   submittedAt: string;
+  /** Client-generated; lets a researcher spot a duplicate without an identity. */
+  responseId: string;
+  /** Which instrument this row answered — see SURVEY_VERSION above. */
+  surveyVersion: string;
+  /** Always 'yes': this payload is only ever built after the checkbox is ticked. */
+  consent: 'yes';
 }
 
 const yesNo = (value: boolean): string => (value ? 'yes' : 'no');
+
+/** UUID v4 without a crypto.randomUUID dependency check — every target here
+ * (evergreen browsers, Node 19+) has it, but a survey response is not worth
+ * a hard crash over, so a low-collision fallback covers the rest. */
+function generateResponseId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `resp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 export function buildSurveyPayload(applicant: Applicant): SurveyPayload {
   return {
@@ -134,6 +188,9 @@ export function buildSurveyPayload(applicant: Applicant): SurveyPayload {
     prefersAge: applicant.prefersAge ?? '',
     prefersEnergy: applicant.prefersEnergy ?? '',
     submittedAt: new Date().toISOString(),
+    responseId: generateResponseId(),
+    surveyVersion: SURVEY_VERSION,
+    consent: 'yes',
   };
 }
 

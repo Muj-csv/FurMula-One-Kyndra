@@ -8,6 +8,13 @@ Send this questionnaire (as-is, or as a form) to ~20 real people. Every
 question maps directly to an `Applicant` field in `src/engine/types.ts`, so
 answers convert into a cohort record with no interpretation in between.
 
+**The full pipeline, participant to deployed cohort, is diagrammed in
+Architecture §12** — this document is the operational how-to; that one is the
+authoritative "why does this not reopen no-server/no-database" argument and
+the end-to-end data-flow. Read it first if anything here seems to imply the
+external collector IS the app's data — it isn't; a response sits in the
+collector until a person reviews it and pastes it into `cohort.ts`.
+
 **Before sending:** tell each respondent this is for a hackathon demo using a
 simulated cohort of animals — they are not applying to adopt a real animal.
 
@@ -84,14 +91,25 @@ no third party who can change their pricing the week of the demo. Uses a
 Google account the team already has.
 
 1. New Google Sheet. Name the first tab `Responses`.
-2. Paste this as row 1, one header per cell — these are exactly the columns
-   `csv-to-applicants.mjs` requires, so the export needs no editing:
+2. Paste this as row 1, one header per cell. The first 13 are exactly the
+   columns `csv-to-applicants.mjs` requires, so the export needs no editing;
+   the last three (`responseId`, `surveyVersion`, `consent`) are integrity
+   metadata the app sends automatically — add the columns so the Sheet
+   actually captures them, but the converter ignores any column it doesn't
+   need, so leaving them off costs nothing either:
 
    ```
    name  specificAnimalId  homeType  hasYard  hoursAwayPerDay  hasChildren
    hasOtherPets  experience  canDoDailyMeds  maxSizeKg  prefersSpecies
-   prefersAge  prefersEnergy  submittedAt
+   prefersAge  prefersEnergy  submittedAt  responseId  surveyVersion  consent
    ```
+
+   `responseId` lets you spot an accidental duplicate submission without
+   anything that identifies who sent it. `surveyVersion` (currently
+   `2026-09-v1`, from `SURVEY_VERSION` in `surveyCapture.ts`) tells you which
+   version of the questions a row answered, in case they change later.
+   `consent` is always `yes` on a row that exists at all — the app only
+   builds a payload after the checkbox is ticked.
 
 3. **Extensions → Apps Script**, and paste:
 

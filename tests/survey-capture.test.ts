@@ -11,7 +11,11 @@
 
 import { describe, it, expect } from 'vitest';
 import converterSource from '../scripts/csv-to-applicants.mjs?raw';
-import { buildSurveyPayload, isSurveyCaptureEnabled } from '../src/data/surveyCapture';
+import {
+  buildSurveyPayload,
+  isSurveyCaptureEnabled,
+  SURVEY_VERSION,
+} from '../src/data/surveyCapture';
 import { APPLICANTS } from '../src/data/cohort';
 
 function converterHeaders(): string[] {
@@ -61,5 +65,43 @@ describe('survey capture and the CSV converter agree', () => {
     // Flips the moment SURVEY_ENDPOINT is set in src/data/surveyCapture.ts.
     // Updating this expectation is the deliberate act of turning capture on.
     expect(isSurveyCaptureEnabled()).toBe(false);
+  });
+
+  it('carries integrity metadata after the required columns, never inside them', () => {
+    const required = converterHeaders();
+    // submittedAt is the one existing extra column (also ignored by the
+    // converter); the new metadata is appended after it, not interleaved —
+    // the seam test above only checks the first N keys, so this pins the
+    // rest of the same contract.
+    expect(Object.keys(payload).slice(required.length)).toEqual([
+      'submittedAt',
+      'responseId',
+      'surveyVersion',
+      'consent',
+    ]);
+  });
+
+  it('generates a distinct response id per submission, without identifying the respondent', () => {
+    const a = buildSurveyPayload(sample);
+    const b = buildSurveyPayload(sample);
+    expect(a.responseId).not.toBe(b.responseId);
+    expect(a.responseId.length).toBeGreaterThan(0);
+    expect(a.responseId).not.toContain(sample.name);
+  });
+
+  it('tags every submission with the current survey version', () => {
+    expect(payload.surveyVersion).toBe(SURVEY_VERSION);
+  });
+
+  it('never flattens a named animal claim into a general preference', () => {
+    const named = buildSurveyPayload({ ...sample, specificAnimalId: 'bruno', prefersSpecies: 'cat' });
+    // Both signals travel independently — a claim on Bruno does not overwrite
+    // or get overwritten by an unrelated stated species preference.
+    expect(named.specificAnimalId).toBe('bruno');
+    expect(named.prefersSpecies).toBe('cat');
+  });
+
+  it('records consent on the row itself, since this is only ever built after opt-in', () => {
+    expect(payload.consent).toBe('yes');
   });
 });
