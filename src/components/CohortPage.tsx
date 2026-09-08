@@ -33,10 +33,12 @@ export function CohortPage({
   animals,
   nextAnimalId,
   onAddAnimal,
+  onRemoveAnimal,
 }: {
   animals: Animal[];
   nextAnimalId: string;
   onAddAnimal: (animal: Animal) => void;
+  onRemoveAnimal: (animalId: string) => void;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [selected, setSelected] = useState<Animal | null>(null);
@@ -60,7 +62,7 @@ export function CohortPage({
         </div>
 
         <div className="actions" style={{ marginTop: 0, marginBottom: '20px' }}>
-          <button type="button" className="button" onClick={() => setShowIntake((v) => !v)}>
+          <button type="button" className="button button--add-animal" onClick={() => setShowIntake((v) => !v)}>
             {showIntake ? 'Hide animal form' : 'Add an animal'}
           </button>
         </div>
@@ -111,21 +113,15 @@ export function CohortPage({
                 onClick={() => setSelected(animal)}
               >
                 <div className="card-image-wrapper" style={{ display: 'grid', placeItems: 'center' }}>
-                  <span className={`status-tag${longStay ? ' long' : ''}`}>
-                    {longStay ? `${animal.daysInShelter} days · Long-stay` : `${animal.daysInShelter} days waiting`}
-                  </span>
                   <AnimalAvatar id={animal.id} name={animal.name} />
                 </div>
                 <div className="card-content">
                   <div className="card-header">
                     <h3 className="pet-name">{animal.name}</h3>
-                    <span className="pet-breed">
-                      {animal.species === 'dog' ? 'Dog' : 'Cat'} · {animal.ageYears}
-                      {animal.ageYears === 1 ? ' yr' : ' yrs'}
-                    </span>
                   </div>
-                  <div className="card-location">Simulated shelter cohort</div>
-                  <span className="view-details-btn">View match requirements →</span>
+                  <span className={`status-tag${longStay ? ' long' : ''}`}>
+                    {longStay ? `${animal.daysInShelter} days · Long-stay` : `${animal.daysInShelter} days waiting`}
+                  </span>
                 </div>
               </button>
             );
@@ -160,6 +156,16 @@ export function CohortPage({
             <div className="modal-actions">
               <button type="button" className="secondary" onClick={() => setSelected(null)}>
                 Close
+              </button>
+              <button
+                type="button"
+                className="button"
+                onClick={() => {
+                  onRemoveAnimal(selected.id);
+                  setSelected(null);
+                }}
+              >
+                Remove from cohort
               </button>
             </div>
           </div>

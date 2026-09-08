@@ -18,15 +18,15 @@
 
 ---
 
-## Phase 2 — Explore Cohort: decluttered cards + add/remove
+## Phase 2 — Explore Cohort: decluttered cards + add/remove ✅
 
 **Goal:** the cohort grid shows less per card, and gains the ability to remove an animal, not just add one.
 
-- [ ] `CohortPage.tsx` — each card face shows only: name, a picture/logo placeholder, and days waiting. Everything else currently on the card face (species/age line, "Simulated shelter cohort" location line, the "View match requirements →" footer strip) moves out of the card face.
-- [ ] `CohortPage.tsx` — clicking a card is how you see match requirements and the rest of the animal's details — the existing modal becomes the one place that information lives, instead of being partly visible on the card and partly in the modal.
-- [ ] `CohortPage.tsx` — add a remove action for an animal (the page already supports adding one via `AnimalIntake`). Where and how to trigger removal (a button on the card, an action inside the modal, etc.) is a small design call made during this phase, not before.
+- [x] `CohortPage.tsx` — each card face now shows only: name, the picture/logo placeholder (`AnimalAvatar`), and days waiting (the status tag). The species/age line, the "Simulated shelter cohort" location line, and the "View match requirements →" footer strip were removed from the card face.
+- [x] `CohortPage.tsx` — clicking a card opens the existing modal, which already carried species/age/size/days-in-shelter and the match-requirements list — that's the one place this information lives now.
+- [x] `CohortPage.tsx` — added a "Remove from cohort" action inside the modal. `App.tsx` gained a `removeAnimal` handler (mirrors `addAnimal`) threaded down as `onRemoveAnimal`.
 
-**Definition of done:** cards are visibly simpler; every removed field is still reachable by clicking through to the modal; an animal added on this page can also be removed from it.
+**Definition of done:** `npm run typecheck` ✅, `npm run build` ✅, `npm run test` ✅ (61/61). Files touched: `App.tsx`, `CohortPage.tsx` only — confirmed via `git status`.
 
 ---
 

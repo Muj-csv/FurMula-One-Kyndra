@@ -69,6 +69,14 @@ export function App() {
     setHasRun(false);
   };
 
+  const removeAnimal = (animalId: string) => {
+    setCohort((previous) => ({
+      animals: previous.animals.filter((animal) => animal.id !== animalId),
+      applicants: previous.applicants,
+    }));
+    setHasRun(false);
+  };
+
   // Counting is not enough on its own: remove-then-add, or a preset id that
   // already looks generated, and the new record silently collides with an
   // existing one. Step past anything taken.
@@ -96,13 +104,18 @@ export function App() {
           appears. Dynamic: the wording changes once the applicant survey has
           actually run (see provenanceLabel in data/cohort.ts) — never a
           static claim. */}
-      <p className="provenance" style={{ margin: '0 auto', maxWidth: 'min(1180px, calc(100% - 40px))' }}>
+      <p className="provenance" style={{ margin: '1.5rem auto 0', maxWidth: 'min(1180px, calc(100% - 40px))' }}>
         {provenanceLabel(cohort)} {COHORT_SIZING_NOTE}
       </p>
 
       {page === 'home' ? <HomePage onNavigate={navigate} /> : null}
       {page === 'cohort' ? (
-        <CohortPage animals={cohort.animals} nextAnimalId={nextAnimalId} onAddAnimal={addAnimal} />
+        <CohortPage
+          animals={cohort.animals}
+          nextAnimalId={nextAnimalId}
+          onAddAnimal={addAnimal}
+          onRemoveAnimal={removeAnimal}
+        />
       ) : null}
       {page === 'match' ? (
         <MatchPage
