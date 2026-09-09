@@ -55,7 +55,8 @@ import type { Applicant } from '../engine';
  * Typed as `string`, not inferred as `''`, so the enabled-check below is a
  * real runtime test rather than a comparison TypeScript folds away.
  */
-export const SURVEY_ENDPOINT: string = '';
+export const SURVEY_ENDPOINT: string =
+  'https://script.google.com/macros/s/AKfycbyrnqM_SPOvmkobZUjP3f4I9Si6e59KkZP4eURlBuh5mPVcEetny3CODUp8JG1ZzKSz/exec';
 
 /** False until SURVEY_ENDPOINT is set. Gates every piece of sharing UI. */
 export function isSurveyCaptureEnabled(): boolean {

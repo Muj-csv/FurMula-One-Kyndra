@@ -61,10 +61,11 @@ describe('survey capture and the CSV converter agree', () => {
     expect(noPreferences.prefersEnergy).toBe('');
   });
 
-  it('stays disabled until an endpoint is configured', () => {
-    // Flips the moment SURVEY_ENDPOINT is set in src/data/surveyCapture.ts.
-    // Updating this expectation is the deliberate act of turning capture on.
-    expect(isSurveyCaptureEnabled()).toBe(false);
+  it('is enabled now that SURVEY_ENDPOINT points at a real collector', () => {
+    // This flipped from false to true the moment a real Apps Script URL was
+    // set in src/data/surveyCapture.ts — updating this expectation IS the
+    // deliberate act of turning capture on for real submissions.
+    expect(isSurveyCaptureEnabled()).toBe(true);
   });
 
   it('carries integrity metadata after the required columns, never inside them', () => {
