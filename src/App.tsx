@@ -1,211 +1,179 @@
-// P0 end-to-end flow: cohort → intake → derive → match → results.
+// App.tsx — thin router shell. Owns the shared state every page reads and
+// switches between the four pages. No routing library: Architecture §2
+// restricts dependencies to React/Vite/TypeScript/Vitest/styling, so this is
+// a plain state switch synced to location.hash — back/forward and reload
+// still work, nothing new installed.
 //
-// Architecture §8: a preset button loads the cohort in one click. Never type
-// during the presentation. The intake form exists and works, but the demo path
-// must not depend on it.
+// Phase 3 (Frontend/REVISION-PHASES.md): two SEPARATE cohorts, not one
+// shared between pages:
 //
-// The UI never reaches into engine internals — it calls runMatch() and reads
-// the result. That is the whole contract (Architecture §3).
+//   demoCohort  — Explore Cohort's own dataset. Starts as the preset COHORT
+//                 and stays that way across navigation; Phase 2's add/remove
+//                 operate on this one. Never run through the engine.
+//   matchCohort — Try Matching's own dataset. Starts EMPTY — no preset data
+//                 leaks into it — and the visitor builds it from scratch
+//                 with the animal/household intake forms on that page. This
+//                 is the cohort that actually gets matched.
+//
+// The UI never reaches into engine internals — it calls compare()/runMatch()
+// and reads the result. That is the whole contract (Architecture §3).
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ASSUMPTION_CONSERVATIVE, compare, type Animal, type Applicant, type Cohort } from './engine';
 import { COHORT, provenanceLabel } from './data/cohort';
-import * as edit from './data/cohortEdit';
-import { RESEARCH, COHORT_SIZING_NOTE } from './data/researchConstants';
-import { AnimalWall } from './components/AnimalWall';
-import { ConstraintGrid } from './components/ConstraintGrid';
-import { ThroughLine } from './components/ThroughLine';
-import { AnimalIntake } from './components/AnimalIntake';
-import { ApplicantIntake } from './components/ApplicantIntake';
-import { CohortEditor } from './components/CohortEditor';
-import { JudgeChallenge } from './components/JudgeChallenge';
-import { ResultsBoard } from './components/ResultsBoard';
+import { COHORT_SIZING_NOTE } from './data/researchConstants';
+import { IconSprite } from './components/IconSprite';
+import { NavBar, type Page } from './components/NavBar';
+import { Footer } from './components/Footer';
+import { HomePage } from './components/HomePage';
+import { CohortPage } from './components/CohortPage';
+import { MatchPage } from './components/MatchPage';
+import { EvidencePage } from './components/EvidencePage';
 import './index.css';
 
+const EMPTY_COHORT: Cohort = { animals: [], applicants: [] };
+
+function pageFromHash(): Page {
+  const hash = window.location.hash.replace('#', '');
+  if (hash === 'cohort' || hash === 'match' || hash === 'evidence') return hash;
+  return 'home';
+}
+
+// Counting is not enough on its own: remove-then-add, or a preset id that
+// already looks generated, and the new record silently collides with an
+// existing one. Step past anything taken.
+function freeId(prefix: string, taken: Set<string>): string {
+  let n = taken.size + 1;
+  while (taken.has(`${prefix}${String(n).padStart(2, '0')}`)) n += 1;
+  return `${prefix}${String(n).padStart(2, '0')}`;
+}
+
 export function App() {
-  const [cohort, setCohort] = useState<Cohort>(COHORT);
+  const [page, setPage] = useState<Page>(pageFromHash);
+
+  const [demoCohort, setDemoCohort] = useState<Cohort>(COHORT);
+  const [matchCohort, setMatchCohort] = useState<Cohort>(EMPTY_COHORT);
+
   const [hasRun, setHasRun] = useState(false);
-  const [showIntake, setShowIntake] = useState(false);
+  const [showApplicantIntake, setShowApplicantIntake] = useState(false);
   const [showAnimalIntake, setShowAnimalIntake] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);
   // Starts at 0 — PURE WANT — on purpose. The demo's hero beat (PRD §8 step 8)
   // is "slide the dial, Bruno matches", and Bruno is only unmatched below 0.30.
-  // Defaulting to 0.5 meant the judge's very first board already had him placed
-  // and there was nothing left to reveal. It is also the more honest default:
-  // no equity thumb on the scale until someone deliberately asks for one.
   const [equityWeight, setEquityWeight] = useState(0);
   const [assumptionLevel, setAssumptionLevel] = useState(ASSUMPTION_CONSERVATIVE);
 
   const outcome = useMemo(
-    () => (hasRun ? compare(cohort, { equityWeight, assumptionLevel }) : null),
-    [cohort, hasRun, equityWeight, assumptionLevel],
+    () => (hasRun ? compare(matchCohort, { equityWeight, assumptionLevel }) : null),
+    [matchCohort, hasRun, equityWeight, assumptionLevel],
   );
 
-  // Every edit takes the board down. A results board rendered from a cohort
-  // that has since changed is the same lie in either direction — an animal
-  // standing on it who is already gone, or one missing who was just added —
-  // and re-running is one click away.
-  //
-  // The edits themselves live in data/cohortEdit.ts, not here: they are what
-  // has to hold (no duplicate id, no dangling named claim), and a component
-  // module cannot be imported by a node-environment test.
-  const editCohort = (next: (previous: Cohort) => Cohort) => {
-    setCohort(next);
+  useEffect(() => {
+    const onHashChange = () => setPage(pageFromHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const navigate = (next: Page) => {
+    window.location.hash = next === 'home' ? '' : next;
+    setPage(next);
+  };
+
+  // ─── Explore Cohort (demo dataset) ───────────────────────────────────────
+
+  const addDemoAnimal = (animal: Animal) => {
+    setDemoCohort((previous) => ({
+      animals: [...previous.animals, animal],
+      applicants: previous.applicants,
+    }));
+  };
+
+  const removeDemoAnimal = (animalId: string) => {
+    setDemoCohort((previous) => ({
+      animals: previous.animals.filter((animal) => animal.id !== animalId),
+      applicants: previous.applicants,
+    }));
+  };
+
+  const nextDemoAnimalId = freeId('a', new Set(demoCohort.animals.map((a) => a.id)));
+
+  // ─── Try Matching (blank-start dataset) ──────────────────────────────────
+
+  const addMatchAnimal = (animal: Animal) => {
+    setMatchCohort((previous) => ({
+      animals: [...previous.animals, animal],
+      applicants: previous.applicants,
+    }));
     setHasRun(false);
   };
 
-  const addApplicant = (applicant: Applicant) =>
-    editCohort((previous) => edit.addApplicant(previous, applicant));
+  const addApplicant = (applicant: Applicant) => {
+    setMatchCohort((previous) => ({
+      animals: previous.animals,
+      applicants: [...previous.applicants, applicant],
+    }));
+    setHasRun(false);
+  };
 
-  const addAnimal = (animal: Animal) =>
-    editCohort((previous) => edit.addAnimal(previous, animal));
-
-  const removeAnimal = (id: string) =>
-    editCohort((previous) => edit.removeAnimal(previous, id));
-
-  const removeApplicant = (id: string) =>
-    editCohort((previous) => edit.removeApplicant(previous, id));
+  const nextMatchAnimalId = freeId('a', new Set(matchCohort.animals.map((a) => a.id)));
+  const nextApplicantId = freeId('p', new Set(matchCohort.applicants.map((a) => a.id)));
 
   const reset = () => {
-    setCohort(COHORT);
+    // Back to blank, not to the demo preset — Try Matching never had preset
+    // data to return to (Phase 3).
+    setMatchCohort(EMPTY_COHORT);
     setHasRun(false);
-    setShowIntake(false);
+    setShowApplicantIntake(false);
     setShowAnimalIntake(false);
-    setShowEditor(false);
   };
 
-  const nextId = edit.nextApplicantId(cohort);
-  const nextAnimalId = edit.nextAnimalId(cohort);
+  // The provenance line is PRD §3.1's "wherever the cohort appears" — with
+  // two cohorts now, it describes whichever one the current page is
+  // actually showing: the demo dataset on Explore Cohort, the visitor's own
+  // build everywhere else (Home has no cohort content yet; Match/Evidence
+  // both concern the dataset actually being matched).
+  const provenanceCohort = page === 'cohort' ? demoCohort : matchCohort;
 
   return (
-    <main className="shell">
-      <header className="shell__header">
-        <h1>Kyndra</h1>
-        <p className="shell__tagline">Where the right homes meet the right animals.</p>
-      </header>
+    <>
+      <IconSprite />
+      <NavBar page={page} onNavigate={navigate} />
 
-      {/* PRD §3.1 — provenance, derived from the data, wherever the cohort appears. */}
-      <p className="provenance">
-        {provenanceLabel(cohort)} {COHORT_SIZING_NOTE}
+      <p className="provenance" style={{ margin: '1.5rem auto 0', maxWidth: 'min(1180px, calc(100% - 40px))' }}>
+        {provenanceLabel(provenanceCohort)} {COHORT_SIZING_NOTE}
       </p>
 
-      {/* ─── PRD §8 beat 1 ───────────────────────────────────────────────
-          One animal, one sentence, before anything else on the page. The demo
-          opens here and closes here (step 11), so this cannot be the seventh
-          thing a judge scrolls past. Only rendered on the landing state — once
-          the board is up, the board is the subject. */}
-      {outcome === null ? (
-        <ThroughLine animals={cohort.animals} applicants={cohort.applicants} />
-      ) : null}
-
-      <div className="actions">
-        <button type="button" className="button button--primary" onClick={() => setHasRun(true)}>
-          Run this cohort
-        </button>
-        <button
-          type="button"
-          className="button"
-          onClick={() => {
-            setShowAnimalIntake((v) => !v);
-            setShowIntake(false);
-            setShowEditor(false);
-          }}
-        >
-          {showAnimalIntake ? 'Hide animal form' : 'Add an animal'}
-        </button>
-        <button
-          type="button"
-          className="button"
-          onClick={() => {
-            setShowIntake((v) => !v);
-            setShowAnimalIntake(false);
-            setShowEditor(false);
-          }}
-        >
-          {showIntake ? 'Hide household form' : 'Add a household'}
-        </button>
-        <button
-          type="button"
-          className="button"
-          onClick={() => {
-            setShowEditor((v) => !v);
-            setShowIntake(false);
-            setShowAnimalIntake(false);
-          }}
-        >
-          {showEditor ? 'Hide cohort editor' : 'Remove records'}
-        </button>
-        <button type="button" className="button" onClick={reset}>
-          Reset to preset cohort
-        </button>
-      </div>
-
-      <p className="shell__note">
-        {cohort.animals.length} animals · {cohort.applicants.length} households ·{' '}
-        {cohort.animals.length * cohort.applicants.length} pairwise judgements to make by
-        hand
-      </p>
-
-      {showAnimalIntake ? (
-        <AnimalIntake nextId={nextAnimalId} onSubmit={addAnimal} />
-      ) : null}
-
-      {showIntake ? (
-        <ApplicantIntake animals={cohort.animals} nextId={nextId} onSubmit={addApplicant} />
-      ) : null}
-
-      {showEditor ? (
-        <CohortEditor
-          cohort={cohort}
-          onRemoveAnimal={removeAnimal}
-          onRemoveApplicant={removeApplicant}
+      {page === 'home' ? <HomePage onNavigate={navigate} /> : null}
+      {page === 'cohort' ? (
+        <CohortPage
+          animals={demoCohort.animals}
+          nextAnimalId={nextDemoAnimalId}
+          onAddAnimal={addDemoAnimal}
+          onRemoveAnimal={removeDemoAnimal}
         />
       ) : null}
-
-      {outcome === null ? (
-        <>
-          {/* PRD §8 beats 2 and 3, in order: the judge tries it by hand, then
-              sees the size of what they just attempted. The grid lived inside
-              the results board, which meant it could only be shown AFTER the
-              cohort had been run — the opposite of what the script does with
-              it. It is the argument for why hand-matching fails, so it has to
-              land before the machine has answered anything. */}
-          <JudgeChallenge animals={cohort.animals} applicants={cohort.applicants} />
-          <ConstraintGrid animals={cohort.animals} applicants={cohort.applicants} />
-
-          {/* PRD §8 beat 4 — the stakes, AFTER the judge has failed at it by
-              hand and seen the scale. Leading with the statistics asks someone
-              to care about a percentage before they have met an animal or
-              understood the problem; this way the number lands as the
-              explanation for what they just experienced. */}
-          <section className="shell__status">
-            <p>
-              <strong>{RESEARCH.dogReturnRate.label}.</strong>{' '}
-              {RESEARCH.behaviouralShareOfReturns.label};{' '}
-              {RESEARCH.householdPetConflictShare.label}. These are compatibility
-              failures, not bad luck — and {RESEARCH.readoptionRate.label.toLowerCase()}.
-            </p>
-            <p className="shell__note">
-              {RESEARCH.dogReturnRate.source} · {RESEARCH.readoptionRate.source}
-            </p>
-          </section>
-
-          <AnimalWall animals={cohort.animals} title="Who is waiting" />
-        </>
-      ) : (
-        <ResultsBoard
-          result={outcome.stable}
-          cohort={cohort}
-          animals={cohort.animals}
-          applicants={cohort.applicants}
-          greedy={outcome.greedy}
-          impact={outcome.impact}
+      {page === 'match' ? (
+        <MatchPage
+          cohort={matchCohort}
+          outcome={outcome}
+          onRun={() => setHasRun(true)}
+          showAnimalIntake={showAnimalIntake}
+          onToggleAnimalIntake={() => setShowAnimalIntake((v) => !v)}
+          nextAnimalId={nextMatchAnimalId}
+          onAddAnimal={addMatchAnimal}
+          showIntake={showApplicantIntake}
+          onToggleIntake={() => setShowApplicantIntake((v) => !v)}
+          nextApplicantId={nextApplicantId}
+          onAddApplicant={addApplicant}
+          onReset={reset}
           equityWeight={equityWeight}
           onEquityWeightChange={setEquityWeight}
           assumptionLevel={assumptionLevel}
           onAssumptionLevelChange={setAssumptionLevel}
         />
-      )}
-    </main>
+      ) : null}
+      {page === 'evidence' ? <EvidencePage cohort={matchCohort} outcome={outcome} onNavigate={navigate} /> : null}
+
+      <Footer />
+    </>
   );
 }
