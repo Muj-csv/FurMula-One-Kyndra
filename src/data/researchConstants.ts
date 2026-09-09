@@ -45,8 +45,14 @@ export const RESEARCH = {
 export const PROJECTION_CAVEAT =
   'Directionally indicative, not a causal estimate. Our constraints do not capture the full behavioural variance the research measured.';
 
-/** Permanent UI label — PRD §3.1. Rendered wherever the cohort appears. */
-export const PROVENANCE_LABEL = 'Simulated animals, real applicants.';
+// A static PROVENANCE_LABEL constant used to live here ("Simulated animals,
+// real applicants."). It was never imported anywhere, and it was wrong on its
+// own terms: it asserted "real applicants" unconditionally, while
+// `provenanceLabel()` in `data/cohort.ts` computes the honest, per-record
+// version PRD §3.1 actually requires ("N of M households are real people we
+// surveyed", or "the applicant survey has not been run yet"). Removed rather
+// than fixed in place, since a second, static, un-wired copy of a provenance
+// claim is exactly the kind of drift PRD §3 exists to prevent.
 
 /** PRD §3.2. Exact wording. Never "sourced from SAC's dataset". */
 export const COHORT_SIZING_NOTE =

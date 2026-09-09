@@ -1,4 +1,4 @@
-# Kyndra — front end
+# Kyndra — front end dsadasdasd
 
 Static prototype. Four pages, no build step, no framework, no bundler.
 Open `index.html` in a browser, or serve the folder over HTTP.
