@@ -6,11 +6,20 @@
 // the equity dial, why-not, unmatched, regret, and impact panels, each in
 // PRD §8's demo-script order (see the comment in ResultsBoard.tsx). Nothing
 // here recomputes what the engine already returned.
+//
+// Phase 3 (Frontend/REVISION-PHASES.md): this page's cohort starts EMPTY —
+// no preset animals or households. The visitor builds it themselves with
+// the animal/household intake forms below. That's a real behaviour change
+// from before, so the pre-run demo beats (ThroughLine/JudgeChallenge/
+// ConstraintGrid — all built around "here's a cohort, look at it") only make
+// sense once there is at least one animal to show; before that, a plain
+// "build your cohort" prompt takes their place.
 
-import type { Applicant, Cohort, GreedyResult, ImpactModel, MatchResult } from '../engine';
+import type { Animal, Applicant, Cohort, GreedyResult, ImpactModel, MatchResult } from '../engine';
 import { ThroughLine } from './ThroughLine';
 import { JudgeChallenge } from './JudgeChallenge';
 import { ConstraintGrid } from './ConstraintGrid';
+import { AnimalIntake } from './AnimalIntake';
 import { ApplicantIntake } from './ApplicantIntake';
 import { ResultsBoard } from './ResultsBoard';
 
@@ -25,6 +34,10 @@ export function MatchPage({
   cohort,
   outcome,
   onRun,
+  showAnimalIntake,
+  onToggleAnimalIntake,
+  nextAnimalId,
+  onAddAnimal,
   showIntake,
   onToggleIntake,
   nextApplicantId,
@@ -38,6 +51,10 @@ export function MatchPage({
   cohort: Cohort;
   outcome: Outcome | null;
   onRun: () => void;
+  showAnimalIntake: boolean;
+  onToggleAnimalIntake: () => void;
+  nextAnimalId: string;
+  onAddAnimal: (animal: Animal) => void;
   showIntake: boolean;
   onToggleIntake: () => void;
   nextApplicantId: string;
@@ -48,26 +65,30 @@ export function MatchPage({
   assumptionLevel: number;
   onAssumptionLevelChange: (value: number) => void;
 }) {
+  const hasAnimals = cohort.animals.length > 0;
+
   return (
     <main className="page">
       <section id="demo">
         <div className="section-head">
           <div>
-            <h2>Run the cohort yourself.</h2>
+            <h2>Build your cohort, then run it.</h2>
             <p>
-              This runs live, in your browser, over today&rsquo;s cohort. Answer the same
-              question a coordinator would ask an applicant, and Kyndra will filter, derive,
-              and settle a stable assignment for the whole cohort.
+              This starts empty. Add the animals and households you want to test — same
+              questions a coordinator would ask — and Kyndra will filter, derive, and settle
+              a stable assignment for the whole cohort.
             </p>
           </div>
         </div>
 
         {/* PRD §8 beat 1 — one animal, one sentence, before anything else.
-            Only shown before a run: once the board is up, the board is the
-            subject. */}
-        {outcome === null ? <ThroughLine animals={cohort.animals} applicants={cohort.applicants} /> : null}
+            Only shown before a run, and only once there is at least one
+            animal to open on. */}
+        {outcome === null && hasAnimals ? (
+          <ThroughLine animals={cohort.animals} applicants={cohort.applicants} />
+        ) : null}
 
-        {outcome === null ? (
+        {outcome === null && hasAnimals ? (
           <>
             {/* PRD §8 beats 2 and 3: the judge tries it by hand, then sees the
                 size of what they just attempted — before the machine answers
@@ -77,17 +98,36 @@ export function MatchPage({
           </>
         ) : null}
 
+        {outcome === null && !hasAnimals ? (
+          <div
+            className="results-empty"
+            style={{
+              marginTop: '22px',
+              padding: '28px',
+              border: '1px dashed var(--line)',
+              borderRadius: 'var(--radius)',
+              textAlign: 'center',
+              color: 'var(--ink-soft)',
+            }}
+          >
+            Nothing here yet — add at least one animal below to get started.
+          </div>
+        ) : null}
+
         <div className="demo-layout" style={{ display: 'grid', gap: '22px', marginTop: '28px' }}>
           <div className="intake-card" style={{ padding: 0 }}>
             <div className="actions" style={{ marginTop: 0 }}>
               <button type="button" className="primary" onClick={onRun}>
                 Run the matching engine →
               </button>
+              <button type="button" className="secondary" onClick={onToggleAnimalIntake}>
+                {showAnimalIntake ? 'Hide animal form' : 'Add an animal'}
+              </button>
               <button type="button" className="secondary" onClick={onToggleIntake}>
                 {showIntake ? 'Hide household form' : 'Add a household'}
               </button>
               <button type="button" className="button" onClick={onReset}>
-                Reset to preset cohort
+                Clear and start over
               </button>
             </div>
 
@@ -97,18 +137,32 @@ export function MatchPage({
               hand
             </p>
 
+            {showAnimalIntake ? <AnimalIntake nextId={nextAnimalId} onSubmit={onAddAnimal} /> : null}
+
             {showIntake ? (
               <ApplicantIntake animals={cohort.animals} nextId={nextApplicantId} onSubmit={onAddApplicant} />
             ) : null}
           </div>
         </div>
 
-        {outcome === null ? (
-          <div className="results-empty" style={{ marginTop: '22px', padding: '28px', border: '1px dashed var(--line)', borderRadius: 'var(--radius)', textAlign: 'center', color: 'var(--ink-soft)' }}>
+        {outcome === null && hasAnimals ? (
+          <div
+            className="results-empty"
+            style={{
+              marginTop: '22px',
+              padding: '28px',
+              border: '1px dashed var(--line)',
+              borderRadius: 'var(--radius)',
+              textAlign: 'center',
+              color: 'var(--ink-soft)',
+            }}
+          >
             Fill in the intake above and run the engine to see where the whole cohort lands —
             not just the household you just added.
           </div>
-        ) : (
+        ) : null}
+
+        {outcome !== null ? (
           <>
             <ResultsBoard
               result={outcome.stable}
@@ -147,7 +201,7 @@ export function MatchPage({
               </p>
             </div>
           </>
-        )}
+        ) : null}
       </section>
     </main>
   );

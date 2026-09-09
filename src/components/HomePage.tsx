@@ -100,7 +100,7 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
       </header>
 
       <main className="page">
-        <section>
+        <section id="how">
           <div className="section-head" style={{ marginBottom: 0, borderBottom: 0, paddingBottom: 0 }}>
             <div>
               <h2>Matching, without the black box.</h2>

@@ -1542,6 +1542,28 @@ main.page {
   padding-top: 0;
 }
 
+/* Overview page only ("how it works", #how) — each step becomes its own
+   tile instead of a plain divided row, matching the glass-tile look used
+   elsewhere. Scoped to #how so Evidence's own .step/.steps (a different
+   list, same shared classes) is untouched. */
+#how .steps {
+  gap: 14px;
+}
+
+#how .step {
+  border-top: 0;
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--terracotta-tint) 70%, transparent), color-mix(in srgb, var(--paper-warm) 60%, transparent));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#how .step:first-child {
+  padding: 18px 20px;
+}
+
 .step b {
   font-family: var(--font-display);
   font-size: 1.3rem;

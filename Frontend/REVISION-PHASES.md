@@ -30,15 +30,17 @@
 
 ---
 
-## Phase 3 — Two starting states: blank build vs. demo cohort
+## Phase 3 — Two starting states: blank build vs. demo cohort ✅
 
 **Goal:** "Run the matching engine" from the Overview page starts from nothing — the visitor builds the whole dataset themselves. "Explore Cohort" keeps behaving like a demo: pre-loaded animals and households, editable.
 
-- [ ] Decide and implement how the app tells these two starting states apart (e.g. the Overview CTA launches Try Matching with an empty cohort instead of the preset one, while Explore Cohort's own "add/remove" changes from Phase 2 keep operating on the demo cohort).
-- [ ] `App.tsx` (and whichever page components read `cohort` state) — the "blank build" path has zero animals and zero households until the visitor adds them; no preset data leaks into that path.
-- [ ] Confirm the demo cohort (Explore Cohort) is unaffected by this split — it still opens pre-populated, exactly as today.
+- [x] `App.tsx` — the single shared `cohort` state split into two: `demoCohort` (starts as the preset `COHORT`, only touched by Explore Cohort's Phase 2 add/remove) and `matchCohort` (starts as `{ animals: [], applicants: [] }`, only touched by the Match page's own intake forms). `outcome`/`compare()` now run against `matchCohort` only.
+- [x] `MatchPage.tsx` — gained its own "Add an animal" toggle + `AnimalIntake`, mirroring the existing household one, since a blank cohort needs both to be buildable from this page (previously animals could only be added on Explore Cohort). The pre-run demo beats (`ThroughLine`/`JudgeChallenge`/`ConstraintGrid`) only render once there's at least one animal; before that, a plain "add at least one animal" prompt takes their place. Button/copy updated to stop implying a preset cohort ("Build your cohort, then run it", "Clear and start over").
+- [x] Confirmed via `node`: `compare()` on a genuinely empty cohort returns a valid (trivially stable, zero-assignment) result — clicking "Run" before adding anything doesn't crash.
+- [x] Explore Cohort unaffected: `CohortPage` still reads `demoCohort`, which still starts as the preset `COHORT` — untouched by this split.
+- [x] The provenance banner (`App.tsx`) now describes whichever cohort the current page actually shows: `demoCohort` on Explore Cohort, `matchCohort` everywhere else (Home has no cohort content yet; Match/Evidence both concern the dataset being matched).
 
-**Definition of done:** starting a match from Overview shows an empty dataset with a clear way to add animals/households; visiting Explore Cohort still shows the existing demo animals; neither path accidentally shares state with the other in a way that surprises the visitor.
+**Definition of done:** `npm run typecheck` ✅, `npm run build` ✅, `npm run test` ✅ (61/61). Files touched: `App.tsx`, `MatchPage.tsx` only — confirmed via `git status`.
 
 ---
 
