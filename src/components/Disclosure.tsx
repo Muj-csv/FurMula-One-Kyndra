@@ -11,7 +11,7 @@
 // by-default toggle with a one-line teaser, so the first screen is short and
 // everything else is still one click away, not removed.
 
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 
 export function Disclosure({
   title,
@@ -25,6 +25,12 @@ export function Disclosure({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  // Redesign Phase 8, §27 — this is the standard WAI-ARIA disclosure
+  // pattern (button controls a region), which needs aria-controls/id to
+  // link the two; aria-expanded alone (the only thing wired before) tells
+  // a screen reader the button's own state but not which content it
+  // toggles.
+  const contentId = useId();
 
   return (
     <div className="disclosure">
@@ -33,6 +39,7 @@ export function Disclosure({
         className="disclosure__trigger"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
+        aria-controls={contentId}
       >
         <span className="disclosure__chevron" aria-hidden="true">
           {open ? '−' : '+'}
@@ -42,7 +49,11 @@ export function Disclosure({
           <span className="disclosure__teaser">{teaser}</span>
         </span>
       </button>
-      {open ? <div className="disclosure__body">{children}</div> : null}
+      {open ? (
+        <div id={contentId} className="disclosure__body" role="region" aria-label={title}>
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 }
