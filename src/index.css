@@ -17,7 +17,12 @@
 :root {
   --ink: #1d1812;
   --ink-soft: #6e5a46;
-  --ink-faint: #a08e76;
+  /* #a08e76 measured ~2.8-3.2:1 as text everywhere it was used (process
+     step numbers, stage-flow labels, the equity dial's end labels) — an
+     axe-core scan is what caught it, not a visual read. Darkened to clear
+     WCAG AA's 4.5:1 (measures ~5.0:1 against white/surface); dark mode's
+     variant below is brightened the same way. */
+  --ink-faint: #756550;
   --paper: #ffffff;
   --paper-warm: #f7ecd4;
   --surface: #fffcf6;
@@ -30,14 +35,26 @@
   --terracotta: #d06224;
   --terracotta-strong: #ae431e;
   --terracotta-tint: #fbe7d7;
-  /* Text color for terracotta-strong-on-terracotta-tint combinations
-     specifically (nav-link.active, the stage-flow/stat-block highlights,
-     the constraint grid's "blocked" cell). Equals --terracotta-strong in
-     light mode; dark mode brightens it below — --terracotta-strong itself
-     stays put because it's also used as a background (filter-btn.active,
-     button hovers) where darkening it would hurt the white text on top. */
+  /* Readable terracotta TEXT — on a terracotta-tint background (nav-link.
+     active, stage-flow/stat-block highlights, the constraint grid's
+     "blocked" cell) or directly on the page background (.eyebrow, the
+     journey track's label, process-flow numbers, "Why this matters").
+     Equals --terracotta-strong in light mode; dark mode brightens it below
+     — --terracotta-strong itself stays put because it's also used as a
+     BACKGROUND (filter-btn.active, button fills) where darkening it would
+     hurt the white text sitting on top of it. */
   --terracotta-on-tint: var(--terracotta-strong);
+  /* Same idea, for --verified text (proof stamps, the "verified matching
+     rules" pill, satisfied-constraint checkmarks). --verified itself
+     measured ~2.3-2.8:1 in dark mode against both the page background and
+     --verified-tint; this brightened value clears 4.5:1 against both. */
+  --verified-readable: var(--verified);
   --olive: #8a8635;
+  /* White text on raw --olive measures ~3.8:1 (needs 4.5:1) — axe-core
+     flagged it on every solid-fill usage (the "Add an animal" button, the
+     demo-mode badge, the long-stay tag). This darkened variant measures
+     ~6:1; same technique already used for the hover state below. */
+  --olive-strong: color-mix(in srgb, var(--olive) 75%, black);
   --olive-tint: #eef0dc;
   --sunset: #eac891;
   --sunset-tint: #fbf1de;
@@ -66,7 +83,9 @@
   :root {
     --ink: #f3ece1;
     --ink-soft: #cbb99e;
-    --ink-faint: #8c7a63;
+    /* The old value measured ~3.9:1 against dark surfaces — also a fail,
+       symmetric with the light-mode fix above. Brightened to ~5.5:1. */
+    --ink-faint: #a89478;
     --paper: #211a13;
     --paper-warm: #2c2318;
     --surface: #27201a;
@@ -79,6 +98,9 @@
     --olive-tint: #2c2c1c;
     --sunset-tint: #362a1a;
     --verified-tint: #1c2b1e;
+    /* Measured against both the page background and --verified-tint above;
+       clears 4.5:1 on each (see --verified-readable's own comment). */
+    --verified-readable: #5fa06e;
     --eliminated-tint: #2a2620;
   }
 }
@@ -151,7 +173,7 @@ p {
 
 .shell__header h1 em {
   font-style: normal;
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
 }
 
 .shell__tagline {
@@ -180,12 +202,18 @@ p {
   border-radius: var(--radius);
 }
 
+/* Was a hardcoded rgba(220, 199, 154, ...) tan — fixed regardless of theme,
+   so in dark mode it stayed light and blended with the dark page behind it
+   into a muddy medium-brown that measured ~2.8:1 against --ink-soft text
+   (axe-core caught it). --paper-warm/--line are theme-aware token colors
+   with the same translucent-tan effect, so the fix is automatic in both
+   modes rather than needing a separate dark-mode override. */
 .provenance {
   margin: 1.25rem 0 0;
   padding: 0.7rem 1rem;
-  border: 1px solid rgba(220, 199, 154, 0.7);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
   border-radius: var(--radius);
-  background: rgba(220, 199, 154, 0.45);
+  background: color-mix(in srgb, var(--paper-warm) 55%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   font-size: 0.95rem;
@@ -231,26 +259,30 @@ p {
   transform: scale(0.97);
 }
 
+/* White text sits on top of both of these, so the base fill is the
+   -strong/on-tint-safe shade, not the raw brand color — see the tokens'
+   own comments (axe-core measured the raw colors at ~3.8:1 with white,
+   below WCAG AA's 4.5:1). */
 .button--primary {
   color: #fff;
-  background: var(--terracotta);
-  border-color: var(--terracotta);
+  background: var(--terracotta-strong);
+  border-color: var(--terracotta-strong);
 }
 
 .button--add-animal {
   color: #fff;
-  background: var(--olive);
-  border-color: var(--olive);
+  background: var(--olive-strong);
+  border-color: var(--olive-strong);
 }
 
 .button--add-animal:hover {
-  background: color-mix(in srgb, var(--olive) 82%, black);
-  border-color: color-mix(in srgb, var(--olive) 82%, black);
+  background: color-mix(in srgb, var(--olive-strong) 85%, black);
+  border-color: color-mix(in srgb, var(--olive-strong) 85%, black);
 }
 
 .button--primary:hover {
-  background: var(--terracotta-strong);
-  border-color: var(--terracotta-strong);
+  background: color-mix(in srgb, var(--terracotta-strong) 85%, black);
+  border-color: color-mix(in srgb, var(--terracotta-strong) 85%, black);
 }
 
 /* Low-emphasis reset/clear action — Phase 4.1: a "start over" control should
@@ -264,6 +296,65 @@ p {
 .button--ghost:hover {
   color: var(--ink);
   border-color: var(--line);
+}
+
+/* ─── Disclosure (results board progressive disclosure) ────────────────────── */
+
+.disclosure {
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.disclosure__trigger {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.disclosure__chevron {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--terracotta);
+  color: var(--terracotta-on-tint);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.disclosure__labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.disclosure__title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.disclosure__teaser {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.disclosure__body {
+  padding: 0 18px 18px;
+}
+
+.disclosure__body > *:first-child {
+  margin-top: 0;
 }
 
 /* ─── Stage flow (Try Matching's process stepper) ─────────────────────────── */
@@ -319,7 +410,7 @@ p {
   flex-shrink: 0;
   padding: 4px 10px;
   border-radius: 999px;
-  background: var(--olive);
+  background: var(--olive-strong);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 800;
@@ -364,13 +455,23 @@ p {
   object-fit: cover;
 }
 
+/* A soft two-tone sphere rather than one flat fill — reads as a considered
+   product detail instead of a placeholder, without adding any imagery that
+   could be mistaken for a real animal (AnimalAvatar.tsx's note on why a
+   photo or a species silhouette is deliberately not used still applies —
+   this is a lighting effect on an abstract shape, not a picture of one). */
 .animal__avatar {
   display: grid;
   place-items: center;
   font-size: 1.4rem;
   font-weight: 700;
   color: #fff;
-  background: hsl(var(--avatar-hue, 18) 62% 46%);
+  background: radial-gradient(
+    circle at 32% 28%,
+    hsl(var(--avatar-hue, 18) 68% 60%),
+    hsl(var(--avatar-hue, 18) 62% 46%) 70%
+  );
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .credits {
@@ -403,7 +504,7 @@ p {
 }
 
 .animal__days--long {
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
   font-weight: 700;
 }
 
@@ -524,7 +625,7 @@ p {
 }
 
 .intake__status--failed {
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
   font-weight: 600;
 }
 
@@ -624,7 +725,7 @@ p {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border-radius: 999px;
-  color: var(--verified);
+  color: var(--verified-readable);
   background: var(--verified-tint);
 }
 
@@ -645,30 +746,42 @@ p {
   font-size: 0.9rem;
 }
 
-/* Phase 5 — "Compatibility" checklist. Applied only where the list content
-   is confirmed requirements (a proposed placement's satisfied constraints),
-   never where it lists failures/eliminations — those keep the plain bullet
-   above so a ✓ never sits next to a reason something was rejected. */
+/* Phase 5 — "Compatibility" checklist, real iconography (StatusGlyph)
+   instead of a "✓"/"✗" text character. --positive is confirmed
+   requirements (a proposed placement's satisfied constraints); --negative
+   is failures/eliminations (why a pairing didn't clear a constraint) — kept
+   as a visually distinct variant so a check mark never sits next to a
+   rejection reason. Both share the same flex/gap layout; only the glyph and
+   its color (set on StatusGlyph itself) differ. */
 .pair__rationale--positive,
+.pair__rationale--negative,
 .pair__constraints--positive ul {
   padding-left: 0;
   list-style: none;
 }
 
 .pair__rationale--positive li,
+.pair__rationale--negative li,
 .pair__constraints--positive li {
-  padding-left: 1.4rem;
-  position: relative;
-  margin-bottom: 0.2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 0.3rem;
 }
 
-.pair__rationale--positive li::before,
-.pair__constraints--positive li::before {
-  content: '✓';
-  position: absolute;
-  left: 0;
-  color: var(--verified);
-  font-weight: 700;
+.status-glyph {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  margin-top: 0.18em;
+}
+
+.status-glyph--ok {
+  color: var(--verified-readable);
+}
+
+.status-glyph--fail {
+  color: var(--terracotta-on-tint);
 }
 
 .pair__constraints {
@@ -926,7 +1039,7 @@ p {
 }
 
 .constraint-grid__cell--ok {
-  color: var(--verified);
+  color: var(--verified-readable);
   background: var(--verified-tint);
 }
 
@@ -1018,7 +1131,7 @@ p {
   margin: 0.75rem 0;
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
 }
 
 .challenge__verdict {
@@ -1028,7 +1141,7 @@ p {
 }
 
 .challenge__verdict--ok {
-  color: var(--verified);
+  color: var(--verified-readable);
   font-weight: 700;
 }
 
@@ -1195,7 +1308,7 @@ p {
 }
 
 .quiz-link {
-  background: var(--terracotta);
+  background: var(--terracotta-strong);
   color: #fff !important;
   padding: 10px 16px;
   border-radius: var(--radius-sm);
@@ -1204,7 +1317,7 @@ p {
 }
 
 .quiz-link:hover {
-  background: var(--terracotta-strong);
+  background: color-mix(in srgb, var(--terracotta-strong) 85%, black);
 }
 
 main.page {
@@ -1244,7 +1357,7 @@ main.page {
   font-size: 0.78rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
   margin-bottom: 18px;
 }
 
@@ -1267,7 +1380,7 @@ main.page {
 
 .hero h1 em {
   font-style: normal;
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
   font-weight: 800;
 }
 
@@ -1350,12 +1463,12 @@ main.page {
 }
 
 .primary {
-  background: var(--terracotta);
+  background: var(--terracotta-strong);
   color: #fff;
 }
 
 .primary:hover {
-  background: var(--terracotta-strong);
+  background: color-mix(in srgb, var(--terracotta-strong) 85%, black);
 }
 
 .secondary {
@@ -1465,7 +1578,7 @@ main.page {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
 }
 
 /* ─── Onboarding (Overview: what is Kyndra / what problem it solves) ─────── */
@@ -1554,7 +1667,7 @@ main.page {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.1rem;
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
 }
 
 .process-flow__step strong {
@@ -1585,7 +1698,7 @@ main.page {
   padding: 9px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  color: var(--verified);
+  color: var(--verified-readable);
   font-weight: 700;
   font-size: 0.8rem;
   white-space: nowrap;
@@ -1710,7 +1823,7 @@ main.page {
 }
 
 .status-tag.long {
-  background: var(--olive);
+  background: var(--olive-strong);
 }
 
 .card-content {
@@ -1731,7 +1844,7 @@ main.page {
 }
 
 .companion-card:hover .pet-name {
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
 }
 
 .pet-breed {
@@ -1807,7 +1920,7 @@ main.page {
 
 .reason b {
   display: block;
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
   margin-bottom: 4px;
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -1898,7 +2011,7 @@ main.page {
 
 .proof-stamp.matched,
 .proof-stamp.stable {
-  color: var(--verified);
+  color: var(--verified-readable);
   background: var(--verified-tint);
 }
 
@@ -1980,7 +2093,13 @@ main.page {
 .site-footer {
   margin-top: 70px;
   padding: 50px max(20px, calc((100vw - 1180px) / 2)) 30px;
-  background: var(--ink);
+  /* --eliminated, not --ink: --ink is the page's foreground/text color, so
+     it FLIPS to near-white in dark mode — using it here meant the footer
+     silently inverted to a light background in dark mode while keeping its
+     white logo and light-gray text, an axe-core scan caught the resulting
+     ~1.2-1.8:1 contrast. --eliminated is a fixed near-black in both modes,
+     matching this footer's actual design intent: always a dark band. */
+  background: var(--eliminated);
   color: #d9d3c6;
 }
 
