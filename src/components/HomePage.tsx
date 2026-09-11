@@ -233,8 +233,10 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
                   <strong>Rule out the impossible</strong>
                   <br />
                   <span>
-                    Every animal–household pair is checked against the hard constraints
-                    first. A failure eliminates the pair; it is not down-ranked.
+                    Some matches are not safe or suitable — Kyndra checks every
+                    animal–household pair against those requirements ("hard constraints")
+                    first and removes the ones that fail, rather than just ranking them
+                    lower.
                   </span>
                 </div>
               </div>
