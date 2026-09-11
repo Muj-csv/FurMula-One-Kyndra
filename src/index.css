@@ -195,8 +195,12 @@ p {
   margin-top: 1.75rem;
 }
 
+/* Same padding/size/radius as .primary/.secondary below (the hero-actions
+   button family) — two class names because they grew in different files,
+   but one visual scale, so a .button and a .secondary never mismatch
+   height when they sit in the same row (Cohort Demo, Try Matching). */
 .button {
-  padding: 0.7rem 1.2rem;
+  padding: 14px 24px;
   font: inherit;
   font-size: 0.95rem;
   font-weight: 700;
@@ -1379,6 +1383,28 @@ main.page {
   margin-bottom: 0;
   padding-bottom: 0;
   border-bottom: 0;
+}
+
+/* ─── Section band — full-bleed alternating background ────────────────────
+   Breaks a <section> out of main.page's centered max-width so a tint reads
+   as a page-wide band rather than a rectangle floating in white, using the
+   same side-padding formula as .hero/.top-nav so its content still lines up
+   with the rest of the page. Used sparingly — only where a page is a plain
+   run of sibling sections with nothing else separating them (Overview) —
+   not on pages already built from bordered panel components, where a band
+   behind a card would just double the framing. */
+.section-band {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 56px max(20px, calc((100vw - 1180px) / 2)) 64px;
+  background: var(--sunset-tint);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.section-band .section-head {
+  margin-top: 0;
 }
 
 /* ─── Journey track — cross-page "where am I" cue ─────────────────────────── */

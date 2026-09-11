@@ -126,7 +126,11 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
           </div>
         </section>
 
-        <section id="process">
+        {/* Full-bleed tint band — separates "how it works" from the plain
+            white sections before and after it, so the three top-level
+            sections on this page read as understand → (band) process →
+            mechanics, not three identical white blocks in a row. */}
+        <section id="process" className="section-band">
           <div className="section-head section-head--tight">
             <div>
               <h2>How does Kyndra work?</h2>
