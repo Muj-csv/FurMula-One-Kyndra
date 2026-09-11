@@ -155,7 +155,7 @@ export function ResultsBoard({
               {assignment.shelterRankOfApplicant} for {animalName(assignment.animalId)}.
             </p>
 
-            <ul className="pair__rationale">
+            <ul className="pair__rationale pair__rationale--positive">
               {assignment.rationale.map((line) => (
                 <li key={line}>{line}</li>
               ))}
@@ -168,9 +168,10 @@ export function ResultsBoard({
               <span className="pair__counterfactual-text">{assignment.counterfactual}</span>
             </p>
 
-            <details className="pair__constraints">
+            <details className="pair__constraints pair__constraints--positive">
               <summary>
-                {assignment.constraintsSatisfied.length} hard constraints satisfied
+                View match details — {assignment.constraintsSatisfied.length} hard constraints
+                satisfied
               </summary>
               <ul>
                 {assignment.constraintsSatisfied.map((label) => (
