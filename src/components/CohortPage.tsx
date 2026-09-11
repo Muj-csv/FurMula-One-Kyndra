@@ -13,6 +13,7 @@ import { useState } from 'react';
 import type { Animal } from '../engine';
 import { AnimalAvatar } from './AnimalAvatar';
 import { AnimalIntake } from './AnimalIntake';
+import { JourneyTrack } from './JourneyTrack';
 
 type Filter = 'all' | 'dog' | 'cat' | 'long';
 
@@ -57,6 +58,7 @@ export function CohortPage({
   return (
     <main className="page">
       <section id="companions">
+        <JourneyTrack step={2} />
         <div className="demo-banner">
           <span className="demo-banner__badge">Demo mode</span>
           <p>

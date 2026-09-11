@@ -538,6 +538,17 @@ p {
   border-left: 0;
 }
 
+/* The headline number — "placements proposed" — is the first thing this
+   board should say; the other three are supporting context read after it. */
+.stat:first-child {
+  background: var(--terracotta-tint);
+}
+
+.stat:first-child .stat__value {
+  color: var(--terracotta-strong);
+  font-size: 2.2rem;
+}
+
 .stat__value {
   font-size: 1.9rem;
   font-weight: 700;
@@ -1370,23 +1381,83 @@ main.page {
   border-bottom: 0;
 }
 
+/* ─── Journey track — cross-page "where am I" cue ─────────────────────────── */
+
+.journey {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 44px 0 10px;
+}
+
+.journey__dots {
+  display: flex;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey__dots li {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.journey__dots li.done {
+  background: var(--olive);
+}
+
+.journey__dots li.active {
+  background: var(--terracotta);
+  width: 18px;
+  border-radius: 4px;
+}
+
+.journey__label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--terracotta-strong);
+}
+
 /* ─── Onboarding (Overview: what is Kyndra / what problem it solves) ─────── */
 
+/* 1st → 2nd priority, not two equal columns: the definition reads first,
+   larger and closer to full ink; the problem statement is visibly secondary
+   — smaller, muted, boxed — so the eye lands on "what it is" before "why it
+   matters", never both at once. */
 .onboarding-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 28px;
-  margin-top: 18px;
+  align-items: start;
+  margin-top: 20px;
 }
 
 .onboarding-copy {
   margin: 0;
+  color: var(--ink);
+  font-size: 1.24rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.onboarding-copy--secondary {
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--olive);
+  border-radius: var(--radius);
+  background: var(--olive-tint);
   color: var(--ink-soft);
-  font-size: 1.02rem;
+  font-size: 0.92rem;
+  font-weight: 400;
   line-height: 1.6;
 }
 
-.onboarding-copy strong {
+.onboarding-copy--secondary strong {
   color: var(--ink);
 }
 
@@ -1401,7 +1472,7 @@ main.page {
 .process-flow {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 20px;
   margin: 24px 0 0;
   padding: 0;
   list-style: none;
@@ -1409,6 +1480,7 @@ main.page {
 }
 
 .process-flow__step {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1417,6 +1489,20 @@ main.page {
   border-top: 3px solid var(--terracotta);
   border-radius: var(--radius);
   background: var(--surface);
+}
+
+/* Chevron connectors — the explicit left-to-right eye path between the five
+   steps. Only meaningful at the 5-across layout, so it disappears the
+   moment the grid wraps below. */
+.process-flow__step:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  top: 14px;
+  right: -20px;
+  color: var(--ink-faint);
+  font-weight: 700;
+  font-size: 0.9rem;
+  z-index: 1;
 }
 
 .process-flow__num {
@@ -1438,6 +1524,9 @@ main.page {
 @media (max-width: 900px) {
   .process-flow {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .process-flow__step::after {
+    display: none;
   }
 }
 

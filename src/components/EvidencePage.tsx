@@ -15,6 +15,7 @@ import { RESEARCH, COHORT_SIZING_NOTE } from '../data/researchConstants';
 import { provenanceLabel } from '../data/cohort';
 import { baselineComparison } from '../data/humanBaseline';
 import { HumanBaselinePanel } from './HumanBaselinePanel';
+import { JourneyTrack } from './JourneyTrack';
 import type { Page } from './NavBar';
 
 interface Outcome {
@@ -47,6 +48,7 @@ export function EvidencePage({
   return (
     <main className="page">
       <section>
+        <JourneyTrack step={5} />
         <div className="section-head">
           <div>
             <h2>What&rsquo;s real, what&rsquo;s simulated.</h2>

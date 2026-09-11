@@ -22,6 +22,7 @@ import { ConstraintGrid } from './ConstraintGrid';
 import { AnimalIntake } from './AnimalIntake';
 import { ApplicantIntake } from './ApplicantIntake';
 import { ResultsBoard } from './ResultsBoard';
+import { JourneyTrack } from './JourneyTrack';
 import type { Page } from './NavBar';
 
 /** Matches engine.compare()'s return shape exactly — see src/engine/index.ts. */
@@ -76,6 +77,7 @@ export function MatchPage({
   return (
     <main className="page">
       <section id="demo">
+        <JourneyTrack step={outcome === null ? 3 : 4} />
         <div className="section-head">
           <div>
             <h2>Matching</h2>
