@@ -8,6 +8,25 @@
 // there is empty on purpose. So unlike the prototype, every card here shows
 // the generated AnimalAvatar, not a photograph. That is the real app's
 // policy, not a gap in the port.
+//
+// ─── REDESIGN PHASE 4 — THE CARD CARRIES THE ANIMAL ────────────────────────
+//
+// A card used to show a name and one saturated full-width pill reading
+// "340 days waiting", in 11px text. Sixteen of them made a wall of identical
+// coloured bars, and the thing a coordinator actually needs — what this
+// animal requires of a home — was locked inside the modal.
+//
+// `requirements()` below was already computing exactly that, and rendering it
+// only after a click. It is on the card now (§11), capped at three so the
+// grid stays scannable, with the rest behind the card's own detail view.
+//
+// The days-waiting pill is gone as a pill. It is metadata, not an alert, and
+// a solid terracotta bar on every card spent the palette's loudest colour on
+// the least urgent fact. Long-stay is what deserves to be noticed, so that is
+// what carries a marker — in Sunset, the brief's highlight colour, which is
+// "visually noticeable but not aggressively highlighted" (§11). It used to be
+// the opposite: long waits were olive/green, ordinary waits terracotta/red,
+// so green read as "good" on the animals who had waited longest.
 
 import { useState } from 'react';
 import type { Animal } from '../engine';
@@ -30,6 +49,18 @@ function requirements(animal: Animal): string[] {
   return needs;
 }
 
+/** "Dog · 7 years · 41 kg" — the same line the detail view has always shown. */
+function descriptor(animal: Animal): string {
+  const years = `${animal.ageYears} ${animal.ageYears === 1 ? 'year' : 'years'}`;
+  return `${animal.species === 'dog' ? 'Dog' : 'Cat'} · ${years} · ${animal.sizeKg}kg`;
+}
+
+/** Long stay is defined once, here — the filter and the card must agree. */
+const LONG_STAY_DAYS = 180;
+
+/** How many needs fit on a card before it stops being scannable. */
+const CHIPS_ON_CARD = 3;
+
 export function CohortPage({
   animals,
   nextAnimalId,
@@ -51,7 +82,7 @@ export function CohortPage({
 
   const visible = animals.filter((animal) => {
     if (filter === 'all') return true;
-    if (filter === 'long') return animal.daysInShelter >= 180;
+    if (filter === 'long') return animal.daysInShelter >= LONG_STAY_DAYS;
     return animal.species === filter;
   });
 
@@ -128,7 +159,11 @@ export function CohortPage({
 
         <div className="companion-grid" data-testid="cohort-grid">
           {visible.map((animal) => {
-            const longStay = animal.daysInShelter >= 180;
+            const longStay = animal.daysInShelter >= LONG_STAY_DAYS;
+            const needs = requirements(animal);
+            const shown = needs.slice(0, CHIPS_ON_CARD);
+            const hidden = needs.length - shown.length;
+
             return (
               <button
                 key={animal.id}
@@ -136,17 +171,31 @@ export function CohortPage({
                 className="companion-card"
                 onClick={() => setSelected(animal)}
               >
-                <div className="card-image-wrapper" style={{ display: 'grid', placeItems: 'center' }}>
+                <span className="card-image-wrapper">
                   <AnimalAvatar id={animal.id} name={animal.name} />
-                </div>
-                <div className="card-content">
-                  <div className="card-header">
-                    <h3 className="pet-name">{animal.name}</h3>
-                  </div>
-                  <span className={`status-tag${longStay ? ' long' : ''}`}>
-                    {longStay ? `${animal.daysInShelter} days · Long-stay` : `${animal.daysInShelter} days waiting`}
+                  {longStay ? <span className="longstay-flag">Long stay</span> : null}
+                </span>
+
+                <span className="card-content">
+                  <span className="pet-name">{animal.name}</span>
+                  <span className="pet-meta">{descriptor(animal)}</span>
+                  <span className="pet-wait">
+                    {animal.daysInShelter} days waiting
                   </span>
-                </div>
+
+                  {needs.length > 0 ? (
+                    <span className="need-chips">
+                      {shown.map((need) => (
+                        <span key={need} className="need-chip">
+                          {need}
+                        </span>
+                      ))}
+                      {hidden > 0 ? <span className="need-chip need-chip--more">+{hidden} more</span> : null}
+                    </span>
+                  ) : (
+                    <span className="pet-meta pet-meta--easy">No special requirements</span>
+                  )}
+                </span>
               </button>
             );
           })}
@@ -163,16 +212,22 @@ export function CohortPage({
               <AnimalAvatar id={selected.id} name={selected.name} />
             </div>
             <h2>{selected.name}</h2>
-            <p style={{ color: 'var(--ink-soft)', marginTop: '10px' }}>
-              {selected.species === 'dog' ? 'Dog' : 'Cat'} · {selected.ageYears}{' '}
-              {selected.ageYears === 1 ? 'year' : 'years'} · {selected.sizeKg}kg ·{' '}
-              {selected.daysInShelter} days in shelter
+            <p className="pet-meta">
+              {descriptor(selected)} · {selected.daysInShelter} days in shelter
             </p>
             <div className="reason">
-              <b>Match requirements</b>
-              {requirements(selected).length === 0
-                ? 'No special requirements — Kyndra still checks every household against the standard hard constraints.'
-                : requirements(selected).join(' · ')}
+              <b>What {selected.name} needs from a home</b>
+              {requirements(selected).length === 0 ? (
+                'Nothing out of the ordinary. Every household is still checked against the same requirements before a match is proposed.'
+              ) : (
+                <span className="need-chips need-chips--full">
+                  {requirements(selected).map((need) => (
+                    <span key={need} className="need-chip">
+                      {need}
+                    </span>
+                  ))}
+                </span>
+              )}
             </div>
             {selected.specialNeeds.length > 0 ? (
               <p className="results__note">{selected.specialNeeds.join('; ')}</p>
