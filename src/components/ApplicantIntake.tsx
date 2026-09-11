@@ -6,6 +6,27 @@
 //
 // Nobody hand-ranks a list. Everything below the first question is a household
 // fact or a stated want; the engine derives both orders from them.
+//
+// ─── REDESIGN PHASE 4 — SECTIONS, NOT ONE LONG FORM ────────────────────────
+//
+// This was a flat eight-field auto-fit grid with four loose checkboxes under
+// it — twelve controls in one undifferentiated block, labelled in the
+// engine's vocabulary ("Hours away per day", "Experience with animals").
+//
+// It is grouped now (§12), and the grouping is not decoration: the last
+// section is separated from the rest BECAUSE the engine treats it
+// differently. Everything above "What you're hoping for" is a household
+// FACT, which only the shelter side ranks on; everything inside it is a
+// stated WANT, which only the applicant side ranks on. Keeping the two
+// visually apart is the clearest statement of Architecture §6's rule that
+// the two preference orders never share an input.
+//
+// Deliberately NOT a multi-step wizard. Architecture §8 makes "a preset
+// button loads the cohort in one click, never type during the presentation" a
+// requirement, so the form is not on the demo path at all — paging it would
+// add state and clicks to something a judge should be able to take in at a
+// glance, and §12 only asks for progress indication IF the form becomes
+// multi-step.
 
 import { useEffect, useState } from 'react';
 import type { Animal, Applicant } from '../engine';
@@ -17,6 +38,23 @@ import {
 
 type Level = 1 | 2 | 3 | 4 | 5;
 const LEVELS: Level[] = [1, 2, 3, 4, 5];
+
+/**
+ * The 1-5 scales, said in words.
+ *
+ * The form used to render these as the bare number plus a fragment ("3 -
+ * some"), which asks the visitor to map their own life onto an integer. The
+ * engine still receives the integer; only the label changed.
+ */
+const EXPERIENCE_LABELS = [
+  'First-time owner',
+  'A little experience',
+  'Some experience',
+  'Very experienced',
+  'I have handled difficult animals',
+];
+
+const ENERGY_LABELS = ['Very calm', 'Calm', 'In between', 'Active', 'Very active'];
 
 function blankApplicant(id: string): Applicant {
   return {
@@ -73,6 +111,21 @@ export function ApplicantIntake({
   const set = <K extends keyof Applicant>(key: K, value: Applicant[K]) =>
     setForm((previous) => ({ ...previous, [key]: value }));
 
+  /**
+   * Number inputs, clamped on the way in.
+   *
+   * `Number('')` is 0, so clearing "Largest animal you can take" used to set
+   * maxSizeKg to 0 — which fails the size constraint for EVERY animal in the
+   * cohort, and presents as "no matches" with nothing on screen explaining
+   * why. min/max attributes alone do not prevent it: they gate form
+   * submission, not the value React stores as you type. NaN falls back to
+   * the low end rather than propagating into the engine.
+   */
+  const setNumber = (key: 'hoursAwayPerDay' | 'maxSizeKg', raw: string, lo: number, hi: number) => {
+    const parsed = Number(raw);
+    set(key, Math.min(hi, Math.max(lo, Number.isFinite(parsed) ? parsed : lo)));
+  };
+
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     if (isSubmitting) return;
@@ -106,164 +159,222 @@ export function ApplicantIntake({
     <form className="intake" onSubmit={submit}>
       <h2 className="section__title">Add a household</h2>
 
-      {/* The question that comes first, on purpose. */}
-      <fieldset className="intake__specific">
-        <legend>Is there a specific animal you are here for?</legend>
+      {/* The question that comes first, on purpose — a real human choice
+          outranks anything a derived score can produce. */}
+      <fieldset className="intake__section intake__section--specific">
+        <legend>Are you here for a specific animal?</legend>
         <p className="intake__hint">
-          If so, they become this household&rsquo;s first choice outright. No derived
-          score can move them.
+          If you are, they become this household&rsquo;s first choice outright — nothing
+          Kyndra calculates can move them.
         </p>
-        <select
-          value={form.specificAnimalId ?? ''}
-          onChange={(event) =>
-            set('specificAnimalId', event.target.value === '' ? null : event.target.value)
-          }
-        >
-          <option value="">No — show me everyone</option>
-          {animals.map((animal) => (
-            <option key={animal.id} value={animal.id}>
-              Yes — {animal.name}
-            </option>
-          ))}
-        </select>
+        <label className="field">
+          <span className="field__label">The animal you came for</span>
+          <select
+            value={form.specificAnimalId ?? ''}
+            onChange={(event) =>
+              set('specificAnimalId', event.target.value === '' ? null : event.target.value)
+            }
+          >
+            <option value="">No — show me everyone</option>
+            {animals.map((animal) => (
+              <option key={animal.id} value={animal.id}>
+                Yes — {animal.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </fieldset>
 
-      <div className="intake__grid">
-        <label>
-          Household name
-          <input
-            type="text"
-            value={form.name}
-            placeholder={`Household ${nextId}`}
-            onChange={(event) => set('name', event.target.value)}
-          />
-        </label>
+      <fieldset className="intake__section">
+        <legend>About your home</legend>
+        <div className="intake__grid">
+          <label className="field">
+            <span className="field__label">What should we call this household?</span>
+            <input
+              type="text"
+              value={form.name}
+              placeholder={`Household ${nextId}`}
+              onChange={(event) => set('name', event.target.value)}
+            />
+            <span className="field__hint">Optional — we&rsquo;ll number it if you leave this blank.</span>
+          </label>
 
-        <label>
-          Home type
-          <select
-            value={form.homeType}
-            onChange={(event) =>
-              set('homeType', event.target.value === 'house' ? 'house' : 'apartment')
-            }
-          >
-            <option value="apartment">Apartment</option>
-            <option value="house">House</option>
-          </select>
-        </label>
+          <label className="field">
+            <span className="field__label">What kind of home is it?</span>
+            <select
+              value={form.homeType}
+              onChange={(event) =>
+                set('homeType', event.target.value === 'house' ? 'house' : 'apartment')
+              }
+            >
+              <option value="apartment">Apartment</option>
+              <option value="house">House</option>
+            </select>
+          </label>
 
-        <label>
-          Hours away per day (0–14)
-          <input
-            type="number"
-            min={0}
-            max={14}
-            value={form.hoursAwayPerDay}
-            onChange={(event) => set('hoursAwayPerDay', Number(event.target.value))}
-          />
-        </label>
+          <label className="field">
+            <span className="field__label">Largest animal you could take</span>
+            <input
+              type="number"
+              min={1}
+              max={70}
+              value={form.maxSizeKg}
+              onChange={(event) => setNumber('maxSizeKg', event.target.value, 1, 70)}
+            />
+            <span className="field__hint">
+              In kilograms. A firm limit — Kyndra never proposes above it.
+            </span>
+          </label>
+        </div>
 
-        <label>
-          Largest animal you can take (kg)
-          <input
-            type="number"
-            min={1}
-            max={70}
-            value={form.maxSizeKg}
-            onChange={(event) => set('maxSizeKg', Number(event.target.value))}
-          />
-        </label>
-
-        <label>
-          Experience with animals
-          <select
-            value={form.experience}
-            onChange={(event) => set('experience', Number(event.target.value) as Level)}
-          >
-            {LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level} — {['none', 'a little', 'some', 'a lot', 'extensive'][level - 1]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Species you want
-          <select
-            value={form.prefersSpecies ?? ''}
-            onChange={(event) =>
-              set(
-                'prefersSpecies',
-                event.target.value === '' ? null : event.target.value === 'dog' ? 'dog' : 'cat',
-              )
-            }
-          >
-            <option value="">No preference</option>
-            <option value="dog">Dog</option>
-            <option value="cat">Cat</option>
-          </select>
-        </label>
-
-        <label>
-          Age you want
-          <select
-            value={form.prefersAge ?? ''}
-            onChange={(event) => {
-              const value = event.target.value;
-              set(
-                'prefersAge',
-                value === 'young' || value === 'adult' || value === 'senior' ? value : null,
-              );
-            }}
-          >
-            <option value="">No preference</option>
-            <option value="young">Young</option>
-            <option value="adult">Adult</option>
-            <option value="senior">Senior</option>
-          </select>
-        </label>
-
-        <label>
-          Energy level you want
-          <select
-            value={form.prefersEnergy ?? ''}
-            onChange={(event) =>
-              set(
-                'prefersEnergy',
-                event.target.value === '' ? null : (Number(event.target.value) as Level),
-              )
-            }
-          >
-            <option value="">No preference</option>
-            {LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="intake__checks">
-        {(
-          [
-            ['hasYard', 'We have a yard'],
-            ['hasChildren', 'There are children in the home'],
-            ['hasOtherPets', 'We already have pets'],
-            ['canDoDailyMeds', 'We can give daily medication'],
-          ] as const
-        ).map(([key, label]) => (
-          <label key={key} className="check">
+        <div className="intake__checks">
+          <label className="check">
             <input
               type="checkbox"
-              checked={form[key]}
-              onChange={(event) => set(key, event.target.checked)}
+              checked={form.hasYard}
+              onChange={(event) => set('hasYard', event.target.checked)}
             />
-            {label}
+            There&rsquo;s a yard or garden
           </label>
-        ))}
-      </div>
+        </div>
+      </fieldset>
+
+      <fieldset className="intake__section">
+        <legend>Who else is at home</legend>
+        <p className="intake__hint">
+          Some animals cannot safely live with children, or with other pets. This is the
+          part that rules pairings out.
+        </p>
+        <div className="intake__checks">
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={form.hasChildren}
+              onChange={(event) => set('hasChildren', event.target.checked)}
+            />
+            There are children in the home
+          </label>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={form.hasOtherPets}
+              onChange={(event) => set('hasOtherPets', event.target.checked)}
+            />
+            We already have pets
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="intake__section">
+        <legend>Your day</legend>
+        <div className="intake__grid">
+          <label className="field">
+            <span className="field__label">How long is the home usually empty?</span>
+            <input
+              type="number"
+              min={0}
+              max={14}
+              value={form.hoursAwayPerDay}
+              onChange={(event) => setNumber('hoursAwayPerDay', event.target.value, 0, 14)}
+            />
+            <span className="field__hint">Hours on a typical day, 0&ndash;14.</span>
+          </label>
+
+          <label className="field">
+            <span className="field__label">How comfortable are you caring for an animal?</span>
+            <select
+              value={form.experience}
+              onChange={(event) => set('experience', Number(event.target.value) as Level)}
+            >
+              {LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {EXPERIENCE_LABELS[level - 1]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="intake__checks">
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={form.canDoDailyMeds}
+              onChange={(event) => set('canDoDailyMeds', event.target.checked)}
+            />
+            We could give daily medication
+          </label>
+        </div>
+      </fieldset>
+
+      {/* Kept apart from everything above on purpose — see the note at the
+          top of this file. Everything before this point is a household FACT
+          the shelter ranks on; everything in here is a WANT only the
+          household ranks on. The two never mix. */}
+      <fieldset className="intake__section intake__section--wants">
+        <legend>What you&rsquo;re hoping for</legend>
+        <p className="intake__hint">
+          All optional. These shape which animals you would prefer — they never override
+          what an animal needs.
+        </p>
+        <div className="intake__grid">
+          <label className="field">
+            <span className="field__label">Dog or cat?</span>
+            <select
+              value={form.prefersSpecies ?? ''}
+              onChange={(event) =>
+                set(
+                  'prefersSpecies',
+                  event.target.value === '' ? null : event.target.value === 'dog' ? 'dog' : 'cat',
+                )
+              }
+            >
+              <option value="">No preference</option>
+              <option value="dog">Dog</option>
+              <option value="cat">Cat</option>
+            </select>
+          </label>
+
+          <label className="field">
+            <span className="field__label">Any age in mind?</span>
+            <select
+              value={form.prefersAge ?? ''}
+              onChange={(event) => {
+                const value = event.target.value;
+                set(
+                  'prefersAge',
+                  value === 'young' || value === 'adult' || value === 'senior' ? value : null,
+                );
+              }}
+            >
+              <option value="">No preference</option>
+              <option value="young">Young</option>
+              <option value="adult">Adult</option>
+              <option value="senior">Senior</option>
+            </select>
+          </label>
+
+          <label className="field">
+            <span className="field__label">How lively would you like them?</span>
+            <select
+              value={form.prefersEnergy ?? ''}
+              onChange={(event) =>
+                set(
+                  'prefersEnergy',
+                  event.target.value === '' ? null : (Number(event.target.value) as Level),
+                )
+              }
+            >
+              <option value="">No preference</option>
+              {LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {ENERGY_LABELS[level - 1]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </fieldset>
 
       {captureEnabled ? (
         <fieldset className="intake__consent">
@@ -293,7 +404,7 @@ export function ApplicantIntake({
         </fieldset>
       ) : null}
 
-      <button type="submit" className="button" disabled={isSubmitting}>
+      <button type="submit" className="button button--primary" disabled={isSubmitting}>
         Add household
       </button>
 

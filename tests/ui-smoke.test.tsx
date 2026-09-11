@@ -26,6 +26,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { cleanup, render, screen, fireEvent, within } from '@testing-library/react';
 import { App } from '../src/App';
+import { ApplicantIntake } from '../src/components/ApplicantIntake';
 import { COHORT } from '../src/data/cohort';
 import { runMatch } from '../src/engine';
 
@@ -102,5 +103,24 @@ describe('the demo path a judge actually walks', () => {
       expect(animal).toBeDefined();
       expect(within(placements).getAllByText(new RegExp(animal!.name)).length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('household intake', () => {
+  it('never lets a cleared size field become a 0kg limit', () => {
+    // Number('') is 0, and maxSizeKg 0 fails the size constraint for EVERY
+    // animal in the cohort — so a visitor who cleared the field to retype it
+    // got "no matches" with nothing on screen explaining why. The min/max
+    // attributes do not prevent this: they gate submission, not the value
+    // React stores as you type.
+    render(<ApplicantIntake animals={COHORT.animals} nextId="p99" onSubmit={() => {}} />);
+
+    const size = screen.getByLabelText(/largest animal/i) as HTMLInputElement;
+    fireEvent.change(size, { target: { value: '' } });
+    expect(Number(size.value)).toBeGreaterThan(0);
+
+    // And the stated ceiling holds from the other end too.
+    fireEvent.change(size, { target: { value: '999' } });
+    expect(Number(size.value)).toBeLessThanOrEqual(70);
   });
 });

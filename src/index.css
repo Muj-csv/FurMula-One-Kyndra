@@ -240,6 +240,15 @@ input {
   color: inherit;
 }
 
+/* Checkboxes, radios and range thumbs are painted by the browser, so without
+   this they arrive in the UA's default blue — the one cool colour in an
+   otherwise entirely warm palette, on the most-clicked controls in the app. */
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'] {
+  accent-color: var(--terracotta);
+}
+
 a {
   text-decoration: none;
 }
@@ -651,17 +660,55 @@ p {
   background: var(--surface);
 }
 
-.intake__specific {
-  margin: 0 0 1.25rem;
-  padding: 0.9rem;
+/* Phase 4 (§12): the form is grouped rather than one long block. Each
+   section is a real <fieldset>, so the grouping is announced to a screen
+   reader as well as drawn. */
+.intake__section {
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
+  background: var(--paper);
 }
 
-.intake__specific legend {
-  padding: 0 0.4rem;
+.intake__section legend {
+  padding: 0 var(--space-2);
+  font-family: var(--font-display);
   font-size: var(--text-base);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
+  color: var(--ink);
+}
+
+/* The first question, and the one the architecture depends on — a stated
+   animal outranks anything a score produces, so it gets the accent. */
+.intake__section--specific {
+  border-left: 3px solid var(--terracotta);
+}
+
+/* Wants, not facts. Tinted apart from the household sections above it
+   because the engine reads it differently: this is the ONLY section the
+   applicant side ranks on. */
+.intake__section--wants {
+  border-left: 3px solid var(--olive);
+  background: color-mix(in srgb, var(--olive-tint) 40%, var(--surface));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.field__hint {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-normal);
+  color: var(--ink-soft);
 }
 
 .intake__hint {
@@ -699,8 +746,12 @@ p {
 .intake__checks {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin: 1rem 0;
+  gap: var(--space-4);
+  margin: var(--space-4) 0 0;
+}
+
+.intake__section > .intake__checks:first-of-type {
+  margin-top: 0;
 }
 
 .check {
@@ -1893,20 +1944,13 @@ main.page > .section-band {
   font-size: var(--text-sm);
 }
 
-/* One flat tint per filter — All / Dogs / Cats / Long-Stay, in that DOM
-   order — so the row still reads as four distinct chips without gradients. */
-.filters .filter-btn:nth-child(1) {
+/* Phase 4: these were four DIFFERENT tints — terracotta, olive, sunset — one
+   per filter, which spent three of the palette's four brand colours on a
+   control that expresses a single choice, and made the row look like four
+   unrelated things (§3, "do not make every component colorful"). One resting
+   style; only the selected one is coloured. */
+.filters .filter-btn {
   background: var(--surface);
-  color: var(--ink-soft);
-}
-.filters .filter-btn:nth-child(2) {
-  background: var(--terracotta-tint);
-}
-.filters .filter-btn:nth-child(3) {
-  background: var(--olive-tint);
-}
-.filters .filter-btn:nth-child(4) {
-  background: var(--sunset-tint);
 }
 
 .filter-btn.active {
@@ -1929,13 +1973,18 @@ main.page > .section-band {
 }
 
 .companion-card {
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface);
-  box-shadow: 0 8px 18px -14px rgba(36, 35, 31, 0.22);
+  box-shadow: var(--shadow-soft);
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  text-align: center;
+  /* Left-aligned: the card now carries a name, a descriptor, a wait and up to
+     four chips. Centred text turns that into a ragged column with no entry
+     point for the eye. */
+  text-align: left;
   padding: 0;
   cursor: pointer;
   width: 100%;
@@ -1949,8 +1998,88 @@ main.page > .section-band {
 
 .card-image-wrapper {
   position: relative;
-  height: 110px;
+  display: grid;
+  place-items: center;
+  height: 104px;
   overflow: hidden;
+  background: color-mix(in srgb, var(--sunset-tint) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+/* Long stay is the fact on this card worth noticing, so it is the only thing
+   here that gets a marker — Sunset, the brief's highlight colour (§3), which
+   is noticeable without shouting (§11). The word is present, not just the
+   colour (Architecture §8: never encode meaning in colour alone). */
+.longstay-flag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--sunset);
+  color: var(--brand-ink);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.02em;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-3) var(--space-4);
+}
+
+.pet-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.pet-meta {
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+}
+
+.pet-meta--easy {
+  margin-top: var(--space-2);
+}
+
+/* The wait, as metadata. It used to be a solid terracotta bar across every
+   card — the palette's loudest colour spent on its least urgent fact. */
+.pet-wait {
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.need-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.need-chip {
+  padding: 3px var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.need-chip--more {
+  color: var(--ink-soft);
+  font-weight: var(--weight-bold);
+}
+
+.need-chips--full {
+  margin-top: var(--space-2);
 }
 
 /* The generated-avatar placeholder fills most of the tile's image area,
@@ -1961,67 +2090,21 @@ main.page > .section-band {
   font-size: var(--text-3xl);
 }
 
-.card-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
 
-.companion-card:hover .card-photo {
-  transform: scale(1.06);
-}
+/* .status-tag / .status-tag.long removed in Phase 4. The first painted every
+   card with a solid terracotta bar; the second made long stays OLIVE, so the
+   palette's positive colour landed on the animals who had waited longest and
+   its urgent one on the animals who had just arrived. See .pet-wait and
+   .longstay-flag above. */
 
-.status-tag {
-  display: block;
-  margin-top: 8px;
-  width: 100%;
-  background: var(--terracotta-strong);
-  color: #fff;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  padding: 5px 7px;
-  border-radius: 5px;
-}
-
-.status-tag.long {
-  background: var(--olive-strong);
-}
-
-.card-content {
-  padding: 10px 10px 12px;
-  text-align: center;
-}
-
-.card-header {
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.pet-name {
-  font-size: var(--text-base);
-  transition: color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
+/* Phase 4: the prototype port left a SECOND .card-content/.pet-name pair
+   here, later in the file than the real ones above — so the card was being
+   re-centred and its name re-sized by rules nobody knew were winning.
+   .pet-breed and .card-location went with them: neither has ever matched any
+   markup in this app. */
 
 .companion-card:hover .pet-name {
   color: var(--terracotta-on-tint);
-}
-
-.pet-breed {
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  text-align: right;
-  font-weight: 600;
-}
-
-.card-location {
-  color: var(--ink-faint);
-  font-size: var(--text-xs);
-  margin: 8px 0 14px;
 }
 
 .view-details-btn {
