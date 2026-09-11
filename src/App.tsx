@@ -96,6 +96,10 @@ export function App() {
 
   const nextDemoAnimalId = freeId('a', new Set(demoCohort.animals.map((a) => a.id)));
 
+  // Phase 3.2 (Kyndra_UI_UX_Refinement_Prompt.md) — undo any add/remove and
+  // return to the original preset cohort.
+  const resetDemoCohort = () => setDemoCohort(COHORT);
+
   // ─── Try Matching (blank-start dataset) ──────────────────────────────────
 
   const addMatchAnimal = (animal: Animal) => {
@@ -116,6 +120,25 @@ export function App() {
 
   const nextMatchAnimalId = freeId('a', new Set(matchCohort.animals.map((a) => a.id)));
   const nextApplicantId = freeId('p', new Set(matchCohort.applicants.map((a) => a.id)));
+
+  // Phase 4.2 (Kyndra_UI_UX_Refinement_Prompt.md) — the empty-state's fast
+  // path. Loads the same preset used by Cohort Demo, as its own copy, so
+  // editing it here never touches demoCohort.
+  const loadDemoCohort = () => {
+    setMatchCohort({ animals: [...COHORT.animals], applicants: [...COHORT.applicants] });
+    setHasRun(false);
+  };
+
+  // Cohort Demo's "Run this cohort →" CTA (Phase 1.2): carries whatever is
+  // currently on Explore Cohort — preset plus any edits — into Try Matching
+  // as its own copy, then jumps there. matchCohort stays independently
+  // editable afterwards; this is a one-time copy, not a live link.
+  const runDemoCohortInMatch = () => {
+    setMatchCohort({ animals: [...demoCohort.animals], applicants: [...demoCohort.applicants] });
+    setHasRun(false);
+    window.location.hash = 'match';
+    setPage('match');
+  };
 
   const reset = () => {
     // Back to blank, not to the demo preset — Try Matching never had preset
@@ -149,6 +172,8 @@ export function App() {
           nextAnimalId={nextDemoAnimalId}
           onAddAnimal={addDemoAnimal}
           onRemoveAnimal={removeDemoAnimal}
+          onResetDemo={resetDemoCohort}
+          onRunCohort={runDemoCohortInMatch}
         />
       ) : null}
       {page === 'match' ? (
@@ -165,6 +190,8 @@ export function App() {
           nextApplicantId={nextApplicantId}
           onAddApplicant={addApplicant}
           onReset={reset}
+          onLoadDemo={loadDemoCohort}
+          onNavigate={navigate}
           equityWeight={equityWeight}
           onEquityWeightChange={setEquityWeight}
           assumptionLevel={assumptionLevel}
