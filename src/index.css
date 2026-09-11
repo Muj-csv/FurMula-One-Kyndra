@@ -19,13 +19,21 @@
   --ink-soft: #6e5a46;
   --ink-faint: #a08e76;
   --paper: #ffffff;
-  --paper-warm: #f1e2c4;
+  --paper-warm: #f7ecd4;
   --surface: #fffcf6;
-  --line: #dcc79a;
+  --line: #e0cd9f;
   --muted: var(--ink-soft);
-  --terracotta: #d95f3a;
-  --terracotta-strong: #b94729;
-  --terracotta-tint: #fbeae1;
+  /* Brand palette — Terracotta / Chile Rojo / Olive / Sunset. Terracotta is
+     the primary-action color; Chile Rojo (--terracotta-strong) carries
+     emphasis/hover/active states; Olive is the secondary accent; Sunset is
+     the warm light-surface tint. Flat colors only — no gradients, no gloss. */
+  --terracotta: #d06224;
+  --terracotta-strong: #ae431e;
+  --terracotta-tint: #fbe7d7;
+  --olive: #8a8635;
+  --olive-tint: #eef0dc;
+  --sunset: #eac891;
+  --sunset-tint: #fbf1de;
   --accent: var(--terracotta-strong);
   --verified: #3b6b45;
   --verified-tint: #e7efe3;
@@ -36,8 +44,8 @@
   --radius: 10px;
   --radius-sm: 6px;
   --radius-lg: 18px;
-  --shadow-modal: 0 24px 64px rgba(36, 35, 31, 0.22);
-  --shadow-card: 0 14px 30px -12px rgba(217, 95, 58, 0.35);
+  --shadow-modal: 0 20px 50px rgba(36, 35, 31, 0.18);
+  --shadow-card: 0 10px 22px -12px rgba(174, 67, 30, 0.28);
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
 
@@ -52,11 +60,13 @@
     --ink: #f3ece1;
     --ink-soft: #cbb99e;
     --ink-faint: #8c7a63;
-    --paper: #17130f;
-    --paper-warm: #241d15;
-    --surface: #1c1712;
-    --line: #3c3225;
-    --terracotta-tint: #3a281f;
+    --paper: #211a13;
+    --paper-warm: #2c2318;
+    --surface: #27201a;
+    --line: #473a29;
+    --terracotta-tint: #3f2a1a;
+    --olive-tint: #2c2c1c;
+    --sunset-tint: #362a1a;
     --verified-tint: #1c2b1e;
     --eliminated-tint: #2a2620;
   }
@@ -212,22 +222,94 @@ p {
   border-color: var(--terracotta);
 }
 
-/* A darker shade of the same pastel gradient family used on the cohort
-   tiles/filters above — this button sits right next to them. */
 .button--add-animal {
   color: #fff;
-  background: linear-gradient(135deg, var(--terracotta-strong), var(--ink));
-  border-color: transparent;
+  background: var(--olive);
+  border-color: var(--olive);
 }
 
 .button--add-animal:hover {
-  border-color: transparent;
-  background: linear-gradient(135deg, var(--terracotta-strong), var(--verified));
+  background: color-mix(in srgb, var(--olive) 82%, black);
+  border-color: color-mix(in srgb, var(--olive) 82%, black);
 }
 
 .button--primary:hover {
   background: var(--terracotta-strong);
   border-color: var(--terracotta-strong);
+}
+
+/* Low-emphasis reset/clear action — Phase 4.1: a "start over" control should
+   not compete visually with the primary or secondary actions next to it. */
+.button--ghost {
+  color: var(--ink-soft);
+  background: none;
+  border-color: transparent;
+}
+
+.button--ghost:hover {
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+/* ─── Stage flow (Try Matching's process stepper) ─────────────────────────── */
+
+.stage-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage-flow li {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.stage-flow li.active {
+  border-color: var(--terracotta);
+  background: var(--terracotta-tint);
+  color: var(--terracotta-strong);
+}
+
+/* ─── Demo banner ───────────────────────────────────────────────────────── */
+
+.demo-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 28px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--olive);
+  border-radius: var(--radius);
+  background: var(--sunset-tint);
+}
+
+.demo-banner p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  max-width: 68ch;
+}
+
+.demo-banner__badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--olive);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* ─── Animal wall ───────────────────────────────────────────────────────── */
@@ -438,17 +520,18 @@ p {
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 0;
   margin-bottom: 1.25rem;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--terracotta);
   border-radius: var(--radius);
   overflow: hidden;
-  background: var(--ink);
+  background: var(--surface);
 }
 
 .stat {
   display: flex;
   flex-direction: column;
   padding: 1rem 1.1rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  border-left: 1px solid var(--line);
 }
 
 .stat:first-child {
@@ -459,12 +542,12 @@ p {
   font-size: 1.9rem;
   font-weight: 700;
   line-height: 1.1;
-  color: #fff;
+  color: var(--ink);
 }
 
 .stat__label {
   font-size: 0.74rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 600;
@@ -534,6 +617,32 @@ p {
   margin: 0.5rem 0 0;
   padding-left: 1.1rem;
   font-size: 0.9rem;
+}
+
+/* Phase 5 — "Compatibility" checklist. Applied only where the list content
+   is confirmed requirements (a proposed placement's satisfied constraints),
+   never where it lists failures/eliminations — those keep the plain bullet
+   above so a ✓ never sits next to a reason something was rejected. */
+.pair__rationale--positive,
+.pair__constraints--positive ul {
+  padding-left: 0;
+  list-style: none;
+}
+
+.pair__rationale--positive li,
+.pair__constraints--positive li {
+  padding-left: 1.4rem;
+  position: relative;
+  margin-bottom: 0.2rem;
+}
+
+.pair__rationale--positive li::before,
+.pair__constraints--positive li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--verified);
+  font-weight: 700;
 }
 
 .pair__constraints {
@@ -958,9 +1067,7 @@ p {
   position: sticky;
   top: 0;
   z-index: 30;
-  background-image: linear-gradient(90deg, rgba(217, 95, 58, 0.4), rgba(59, 107, 69, 0.4), rgba(217, 95, 58, 0.4));
-  background-size: 250% 100%;
-  background-position: var(--nav-x, 50%) 0%;
+  background: color-mix(in srgb, var(--paper-warm) 88%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
   display: flex;
@@ -1053,40 +1160,8 @@ p {
   align-items: center;
 }
 
-/* Notification / profile placeholders — Phase 1. Round tile, same
-   translucent treatment as the nav-link tiles, icon-only. */
-.icon-button {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  color: var(--ink-soft);
-  background: color-mix(in srgb, var(--paper-warm) 45%, transparent);
-  border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
-  cursor: default;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.12s;
-}
-
-.icon-button svg {
-  width: 18px;
-  height: 18px;
-}
-
-.icon-button:hover {
-  color: var(--ink);
-  border-color: var(--ink-faint);
-}
-
-.icon-button:active {
-  transform: scale(0.94);
-}
-
-/* A blend of the nav's own two gradient colors (terracotta + verified) —
-   distinct from either pure shade, so it blends with the bar behind it
-   instead of just repeating one end of its gradient. */
 .quiz-link {
-  background: color-mix(in srgb, var(--terracotta) 50%, var(--verified));
+  background: var(--terracotta);
   color: #fff !important;
   padding: 10px 16px;
   border-radius: var(--radius-sm);
@@ -1095,7 +1170,7 @@ p {
 }
 
 .quiz-link:hover {
-  background: color-mix(in srgb, var(--terracotta-strong) 50%, var(--verified));
+  background: var(--terracotta-strong);
 }
 
 main.page {
@@ -1287,6 +1362,91 @@ main.page {
   max-width: 46ch;
 }
 
+/* A section-head with no divider/spacing below it, for sections that flow
+   straight into their own content instead of a bordered block. */
+.section-head--tight {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+/* ─── Onboarding (Overview: what is Kyndra / what problem it solves) ─────── */
+
+.onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  margin-top: 18px;
+}
+
+.onboarding-copy {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+.onboarding-copy strong {
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .onboarding-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Process flow (Overview: the five-step "how it works") ──────────────── */
+
+.process-flow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.process-flow__step {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 14px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--terracotta);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.process-flow__num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--terracotta-strong);
+}
+
+.process-flow__step strong {
+  font-size: 0.95rem;
+}
+
+.process-flow__step span:last-child {
+  font-size: 0.84rem;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .process-flow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .process-flow {
+    grid-template-columns: 1fr;
+  }
+}
+
 .proof {
   padding: 9px 14px;
   border: 1px solid var(--line);
@@ -1322,26 +1482,25 @@ main.page {
   font-size: 0.86rem;
 }
 
-/* A different pastel gradient per filter — All / Dogs / Cats / Long-Stay,
-   in that DOM order — so the row itself carries some of the same glass
-   color language as the cohort tiles below it. */
+/* One flat tint per filter — All / Dogs / Cats / Long-Stay, in that DOM
+   order — so the row still reads as four distinct chips without gradients. */
 .filters .filter-btn:nth-child(1) {
-  background: linear-gradient(135deg, var(--paper-warm), var(--surface));
+  background: var(--surface);
   color: var(--ink-soft);
 }
 .filters .filter-btn:nth-child(2) {
-  background: linear-gradient(135deg, var(--terracotta-tint), var(--paper-warm));
+  background: var(--terracotta-tint);
 }
 .filters .filter-btn:nth-child(3) {
-  background: linear-gradient(135deg, var(--verified-tint), var(--paper-warm));
+  background: var(--olive-tint);
 }
 .filters .filter-btn:nth-child(4) {
-  background: linear-gradient(135deg, var(--terracotta-tint), var(--verified-tint));
+  background: var(--sunset-tint);
 }
 
 .filter-btn.active {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--terracotta-strong);
+  border-color: var(--terracotta-strong);
   color: #fff;
 }
 
@@ -1359,15 +1518,12 @@ main.page {
 }
 
 .companion-card {
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: linear-gradient(160deg, var(--terracotta-tint), var(--paper-warm) 55%, var(--verified-tint));
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 14px 34px -18px rgba(36, 35, 31, 0.28);
-  transition: border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  background: var(--surface);
+  box-shadow: 0 8px 18px -14px rgba(36, 35, 31, 0.22);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   text-align: center;
   padding: 0;
   cursor: pointer;
@@ -1411,7 +1567,7 @@ main.page {
   display: block;
   margin-top: 8px;
   width: 100%;
-  background: linear-gradient(135deg, var(--ink), var(--terracotta-strong));
+  background: var(--terracotta-strong);
   color: #fff;
   font-size: 0.62rem;
   font-weight: 700;
@@ -1420,7 +1576,7 @@ main.page {
 }
 
 .status-tag.long {
-  background: linear-gradient(135deg, var(--terracotta-strong), var(--ink));
+  background: var(--olive);
 }
 
 .card-content {
@@ -1554,10 +1710,8 @@ main.page {
   border-top: 0;
   padding: 18px 20px;
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--terracotta-tint) 70%, transparent), color-mix(in srgb, var(--paper-warm) 60%, transparent));
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  background: var(--sunset-tint);
 }
 
 #how .step:first-child {
@@ -1814,8 +1968,19 @@ main.page {
 }
 
 @media (max-width: 900px) {
+  /* Phase 7 — this used to hide the four primary nav links entirely below
+     900px with no alternative way to reach them. Wrap them onto their own
+     row and let it scroll horizontally instead, so navigation still works
+     on tablet/mobile without adding a hamburger-menu dependency. */
+  .top-nav {
+    flex-wrap: wrap;
+  }
   .nav-links {
-    display: none;
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .hero-inner {
     grid-template-columns: 1fr;
