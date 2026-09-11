@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { evaluatePair, type Animal, type Applicant } from '../engine';
 import { RESEARCH } from '../data/researchConstants';
+import { StatusGlyph } from './StatusGlyph';
 
 interface Props {
   animals: Animal[];
@@ -53,11 +54,14 @@ export function WhyNotPanel({ animals, applicants }: Props) {
                   <strong>{applicant.name}</strong>
                   <span className="pair__tag">eliminated</span>
                 </div>
-                <ul className="pair__rationale">
+                <ul className="pair__rationale pair__rationale--negative">
                   {failures.map((failure) => (
                     <li key={failure.constraintId}>
-                      {failure.label} — {failure.preventsReturnCause} (
-                      {RESEARCH[failure.citationKey].source})
+                      <StatusGlyph kind="fail" />
+                      <span>
+                        {failure.label} — {failure.preventsReturnCause} (
+                        {RESEARCH[failure.citationKey].source})
+                      </span>
                     </li>
                   ))}
                 </ul>

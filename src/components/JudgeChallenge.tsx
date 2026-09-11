@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react';
 import { evaluatePair, type Animal, type Applicant } from '../engine';
 import { RESEARCH } from '../data/researchConstants';
+import { StatusGlyph } from './StatusGlyph';
 
 const CHALLENGE_SIZE = 4;
 const TIMER_SECONDS = 120;
@@ -127,11 +128,14 @@ export function JudgeChallenge({ animals, applicants }: Props) {
                   Clears every hard constraint.
                 </p>
               ) : (
-                <ul className="pair__rationale">
+                <ul className="pair__rationale pair__rationale--negative">
                   {failures.map((failure) => (
                     <li key={failure.constraintId}>
-                      {failure.label} — {failure.preventsReturnCause} (
-                      {RESEARCH[failure.citationKey].source})
+                      <StatusGlyph kind="fail" />
+                      <span>
+                        {failure.label} — {failure.preventsReturnCause} (
+                        {RESEARCH[failure.citationKey].source})
+                      </span>
                     </li>
                   ))}
                 </ul>

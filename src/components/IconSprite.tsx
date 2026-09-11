@@ -24,6 +24,27 @@ export function IconSprite() {
           <circle cx="16" cy="8" r="4.2" fill="#fff" />
           <circle cx="25" cy="12" r="4" fill="#fff" />
         </symbol>
+
+        {/* Status glyphs — real iconography for the satisfied/eliminated
+            checklists (ResultsBoard, WhyNotPanel, JudgeChallenge,
+            UnmatchedPanel), replacing the plain "✓"/"✗" text characters
+            those lists used to render. currentColor so each usage site's
+            own color (var(--verified) / var(--terracotta-on-tint)) applies. */}
+        <symbol id="check-icon" viewBox="0 0 20 20">
+          <circle cx="10" cy="10" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path
+            d="M6 10.2l2.6 2.6L14.2 7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </symbol>
+        <symbol id="cross-icon" viewBox="0 0 20 20">
+          <circle cx="10" cy="10" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </symbol>
       </defs>
     </svg>
   );

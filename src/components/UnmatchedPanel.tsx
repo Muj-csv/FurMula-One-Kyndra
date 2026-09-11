@@ -4,6 +4,7 @@
 // result — this component composes no justification of its own.
 
 import type { Applicant, UnmatchedAnimal } from '../engine';
+import { StatusGlyph } from './StatusGlyph';
 
 interface Props {
   unmatchedAnimals: UnmatchedAnimal[];
@@ -45,10 +46,13 @@ export function UnmatchedPanel({
               </p>
               <details className="pair__constraints">
                 <summary>Which constraint eliminated each household</summary>
-                <ul>
+                <ul className="pair__rationale--negative">
                   {unmatched.blockedBy.map((blocked) => (
                     <li key={blocked.applicantId}>
-                      {applicantName(blocked.applicantId)} — {blocked.failedConstraint}
+                      <StatusGlyph kind="fail" />
+                      <span>
+                        {applicantName(blocked.applicantId)} — {blocked.failedConstraint}
+                      </span>
                     </li>
                   ))}
                 </ul>
