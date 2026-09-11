@@ -22,6 +22,7 @@ import { ConstraintGrid } from './ConstraintGrid';
 import { AnimalIntake } from './AnimalIntake';
 import { ApplicantIntake } from './ApplicantIntake';
 import { ResultsBoard } from './ResultsBoard';
+import type { Page } from './NavBar';
 
 /** Matches engine.compare()'s return shape exactly — see src/engine/index.ts. */
 interface Outcome {
@@ -43,6 +44,8 @@ export function MatchPage({
   nextApplicantId,
   onAddApplicant,
   onReset,
+  onLoadDemo,
+  onNavigate,
   equityWeight,
   onEquityWeightChange,
   assumptionLevel,
@@ -60,11 +63,14 @@ export function MatchPage({
   nextApplicantId: string;
   onAddApplicant: (applicant: Applicant) => void;
   onReset: () => void;
+  onLoadDemo: () => void;
+  onNavigate: (page: Page) => void;
   equityWeight: number;
   onEquityWeightChange: (value: number) => void;
   assumptionLevel: number;
   onAssumptionLevelChange: (value: number) => void;
 }) {
+  const isEmpty = cohort.animals.length === 0 && cohort.applicants.length === 0;
   const hasAnimals = cohort.animals.length > 0;
 
   return (
@@ -72,14 +78,43 @@ export function MatchPage({
       <section id="demo">
         <div className="section-head">
           <div>
-            <h2>Build your cohort, then run it.</h2>
+            <h2>Matching</h2>
             <p>
-              This starts empty. Add the animals and households you want to test — same
-              questions a coordinator would ask — and Kyndra will filter, derive, and settle
-              a stable assignment for the whole cohort.
+              Step 1: add animals. Step 2: add households. Step 3: review the cohort. Step 4: run
+              the matching engine. Step 5: review the results.
             </p>
           </div>
         </div>
+
+        {/* Phase 3.5 — a simple stage indicator, not an animation. Filter and
+            Derive light up once there is a cohort to run; Match and Results
+            light up once the engine has actually run. */}
+        <ol className="stage-flow" aria-label="Matching process stage">
+          <li className={hasAnimals || outcome !== null ? 'active' : ''}>01 Filter</li>
+          <li className={hasAnimals || outcome !== null ? 'active' : ''}>02 Derive</li>
+          <li className={outcome !== null ? 'active' : ''}>03 Match</li>
+          <li className={outcome !== null ? 'active' : ''}>04 Results</li>
+        </ol>
+
+        {isEmpty ? (
+          <div className="demo-banner">
+            <span className="demo-banner__badge">Empty cohort</span>
+            <div>
+              <p style={{ marginBottom: '10px' }}>
+                Your cohort is empty — 0 animals, 0 households. Load the demo cohort to see
+                Kyndra in action immediately, or build your own from scratch below.
+              </p>
+              <div className="actions" style={{ marginTop: 0 }}>
+                <button type="button" className="primary" onClick={onLoadDemo}>
+                  Load demo cohort
+                </button>
+                <button type="button" className="secondary" onClick={onToggleAnimalIntake}>
+                  Build my own cohort
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* PRD §8 beat 1 — one animal, one sentence, before anything else.
             Only shown before a run, and only once there is at least one
@@ -98,24 +133,12 @@ export function MatchPage({
           </>
         ) : null}
 
-        {outcome === null && !hasAnimals ? (
-          <div
-            className="results-empty"
-            style={{
-              marginTop: '22px',
-              padding: '28px',
-              border: '1px dashed var(--line)',
-              borderRadius: 'var(--radius)',
-              textAlign: 'center',
-              color: 'var(--ink-soft)',
-            }}
-          >
-            Nothing here yet — add at least one animal below to get started.
-          </div>
-        ) : null}
-
         <div className="demo-layout" style={{ display: 'grid', gap: '22px', marginTop: '28px' }}>
           <div className="intake-card" style={{ padding: 0 }}>
+            <p className="results__note" style={{ marginBottom: '10px' }}>
+              Step 1 &amp; 2 — add animals and households. Step 3 — the counts below are your
+              cohort. Step 4 — run the engine.
+            </p>
             <div className="actions" style={{ marginTop: 0 }}>
               <button type="button" className="primary" onClick={onRun}>
                 Run the matching engine →
@@ -126,7 +149,7 @@ export function MatchPage({
               <button type="button" className="secondary" onClick={onToggleIntake}>
                 {showIntake ? 'Hide household form' : 'Add a household'}
               </button>
-              <button type="button" className="button" onClick={onReset}>
+              <button type="button" className="button button--ghost" onClick={onReset}>
                 Clear and start over
               </button>
             </div>
@@ -199,6 +222,15 @@ export function MatchPage({
                     : `${outcome.stable.blockingPairs.length} blocking pair(s) found — this should not happen.`}
                 </span>
               </p>
+            </div>
+
+            <div className="hero-actions" style={{ marginTop: '24px' }}>
+              <button type="button" className="secondary" onClick={onReset}>
+                Explore another cohort
+              </button>
+              <button type="button" className="secondary" onClick={() => onNavigate('evidence')}>
+                See why Kyndra works this way →
+              </button>
             </div>
           </>
         ) : null}

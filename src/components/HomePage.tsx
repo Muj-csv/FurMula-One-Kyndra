@@ -100,10 +100,80 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
       </header>
 
       <main className="page">
+        {/* Phase 1.1 — Overview as onboarding. Answers "what is this", "what
+            problem does it solve", and "how does it work" in plain language,
+            before anything technical. */}
+        <section id="what">
+          <div className="section-head section-head--tight">
+            <div>
+              <h2>What is Kyndra?</h2>
+            </div>
+          </div>
+          <div className="onboarding-grid">
+            <div>
+              <p className="onboarding-copy">
+                Kyndra is a matching system for animal shelters. It takes the animals waiting for
+                homes and the households applying to adopt, and proposes who should go with whom
+                — not by ranking pets for a person, but by weighing what both sides actually need.
+              </p>
+            </div>
+            <div>
+              <p className="onboarding-copy">
+                <strong>The problem it solves:</strong> matching by hand means one coordinator
+                holding every animal&rsquo;s needs and every household&rsquo;s constraints in their
+                head at once, for every possible pairing. That does not scale past a handful of
+                animals, and it is easy to miss a conflict — or a good fit — under time pressure.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="process">
+          <div className="section-head section-head--tight">
+            <div>
+              <h2>How does Kyndra work?</h2>
+              <p>Five steps, run automatically every time.</p>
+            </div>
+          </div>
+          <ol className="process-flow">
+            <li className="process-flow__step">
+              <span className="process-flow__num">01</span>
+              <strong>Build the cohort</strong>
+              <span>Animals and households enter the system.</span>
+            </li>
+            <li className="process-flow__step">
+              <span className="process-flow__num">02</span>
+              <strong>Filter</strong>
+              <span>Impossible pairings are removed.</span>
+            </li>
+            <li className="process-flow__step">
+              <span className="process-flow__num">03</span>
+              <strong>Derive</strong>
+              <span>The system considers information from both sides.</span>
+            </li>
+            <li className="process-flow__step">
+              <span className="process-flow__num">04</span>
+              <strong>Match</strong>
+              <span>A stable assignment is calculated.</span>
+            </li>
+            <li className="process-flow__step">
+              <span className="process-flow__num">05</span>
+              <strong>Review</strong>
+              <span>Staff inspect the resulting matches.</span>
+            </li>
+          </ol>
+          <div className="hero-actions">
+            <button type="button" className="primary" onClick={() => onNavigate('cohort')}>
+              See the Cohort Demo →
+            </button>
+          </div>
+        </section>
+
         <section id="how">
-          <div className="section-head" style={{ marginBottom: 0, borderBottom: 0, paddingBottom: 0 }}>
+          <div className="section-head section-head--tight">
             <div>
               <h2>Matching, without the black box.</h2>
+              <p>The mechanics behind steps 02–04, for anyone who wants the detail.</p>
             </div>
           </div>
           <div className="explainer">
@@ -140,7 +210,11 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
                 <div>
                   <strong>Find a stable match</strong>
                   <br />
-                  <span>Gale–Shapley deferred acceptance settles the whole cohort at once.</span>
+                  <span>
+                    Gale–Shapley deferred acceptance settles the whole cohort at once.
+                    <br />
+                    <i>Method: Gale–Shapley deferred acceptance.</i>
+                  </span>
                 </div>
               </div>
             </div>

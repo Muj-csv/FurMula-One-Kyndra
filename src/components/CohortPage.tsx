@@ -34,11 +34,15 @@ export function CohortPage({
   nextAnimalId,
   onAddAnimal,
   onRemoveAnimal,
+  onResetDemo,
+  onRunCohort,
 }: {
   animals: Animal[];
   nextAnimalId: string;
   onAddAnimal: (animal: Animal) => void;
   onRemoveAnimal: (animalId: string) => void;
+  onResetDemo: () => void;
+  onRunCohort: () => void;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [selected, setSelected] = useState<Animal | null>(null);
@@ -53,18 +57,36 @@ export function CohortPage({
   return (
     <main className="page">
       <section id="companions">
+        <div className="demo-banner">
+          <span className="demo-banner__badge">Demo mode</span>
+          <p>
+            This is a realistic, fictional cohort — not a real shelter&rsquo;s data. It exists so
+            you can see how Kyndra works before building anything yourself: some pairings here
+            are impossible, some animals have several viable households, and one is unmatched no
+            matter what. Open any card to see why.
+          </p>
+        </div>
+
         <div className="section-head">
           <div>
-            <h2>Simulated cohort</h2>
-            <p>Explore the animals before running the matching flow. Every profile is inspectable.</p>
+            <h2>Cohort Demo</h2>
+            <p>These are the animals waiting, and the constraints that shape who they can go home with.</p>
           </div>
           <div className="proof">Verified matching rules</div>
         </div>
 
-        <div className="actions" style={{ marginTop: 0, marginBottom: '20px' }}>
-          <button type="button" className="button button--add-animal" onClick={() => setShowIntake((v) => !v)}>
-            {showIntake ? 'Hide animal form' : 'Add an animal'}
+        <div className="actions" style={{ marginTop: 0, marginBottom: '20px', justifyContent: 'space-between' }}>
+          <button type="button" className="primary" onClick={onRunCohort}>
+            Run this cohort →
           </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="button" className="button button--add-animal" onClick={() => setShowIntake((v) => !v)}>
+              {showIntake ? 'Hide animal form' : 'Add an animal (custom)'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={onResetDemo}>
+              Reset demo
+            </button>
+          </div>
         </div>
 
         {showIntake ? (
