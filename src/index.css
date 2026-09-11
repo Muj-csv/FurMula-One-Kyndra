@@ -30,6 +30,13 @@
   --terracotta: #d06224;
   --terracotta-strong: #ae431e;
   --terracotta-tint: #fbe7d7;
+  /* Text color for terracotta-strong-on-terracotta-tint combinations
+     specifically (nav-link.active, the stage-flow/stat-block highlights,
+     the constraint grid's "blocked" cell). Equals --terracotta-strong in
+     light mode; dark mode brightens it below — --terracotta-strong itself
+     stays put because it's also used as a background (filter-btn.active,
+     button hovers) where darkening it would hurt the white text on top. */
+  --terracotta-on-tint: var(--terracotta-strong);
   --olive: #8a8635;
   --olive-tint: #eef0dc;
   --sunset: #eac891;
@@ -65,6 +72,10 @@
     --surface: #27201a;
     --line: #473a29;
     --terracotta-tint: #3f2a1a;
+    /* --terracotta-strong (#ae431e) on the darkened tint above measures
+       ~2.3:1 — fails WCAG even for large text (3:1). This brighter shade
+       measures ~5.3:1 against the same tint. */
+    --terracotta-on-tint: #e98a52;
     --olive-tint: #2c2c1c;
     --sunset-tint: #362a1a;
     --verified-tint: #1c2b1e;
@@ -280,7 +291,7 @@ p {
 .stage-flow li.active {
   border-color: var(--terracotta);
   background: var(--terracotta-tint);
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
 }
 
 /* ─── Demo banner ───────────────────────────────────────────────────────── */
@@ -549,7 +560,7 @@ p {
 }
 
 .stat:first-child .stat__value {
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
   font-size: 2.2rem;
 }
 
@@ -693,7 +704,15 @@ p {
   height: 5px;
   border-radius: 3px;
   background: var(--line);
-  outline: none;
+}
+
+/* This is "the hero interaction" (see the component's own comment) — a
+   keyboard user tabbing to it needs to see that, same as any other control.
+   :focus-visible instead of :focus so a mouse click doesn't draw a ring
+   that a keyboard Tab legitimately should. */
+.dial__slider:focus-visible {
+  outline: 3px solid var(--terracotta);
+  outline-offset: 3px;
 }
 
 .dial__slider::-webkit-slider-thumb {
@@ -912,7 +931,7 @@ p {
 }
 
 .constraint-grid__cell--blocked {
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
   background: var(--terracotta-tint);
 }
 
@@ -1160,7 +1179,7 @@ p {
 }
 
 .nav-link.active {
-  color: var(--terracotta-strong);
+  color: var(--terracotta-on-tint);
   background: var(--terracotta-tint);
   border-color: var(--terracotta);
 }
