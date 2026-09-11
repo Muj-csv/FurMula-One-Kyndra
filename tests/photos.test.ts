@@ -17,7 +17,7 @@ import { describe, it, expect } from 'vitest';
 import { ANIMALS } from '../src/data/cohort';
 import { PHOTO_CREDITS, photoCredit, hasCreditedPhoto } from '../src/data/photoCredits';
 import type { PhotoCredit } from '../src/data/photoCredits';
-import { avatarHue } from '../src/components/AnimalAvatar';
+import { avatarHue, HUE_START, HUE_RANGE } from '../src/components/AnimalAvatar';
 
 const withPhotos = ANIMALS.filter((animal) => animal.photo.trim() !== '');
 
@@ -132,10 +132,12 @@ describe('the fallback avatar', () => {
 
   it('stays inside the brand band', () => {
     // Widening this makes sixteen cards read as a bag of skittles rather than
-    // one product. If it needs to change, change the constants, not the test.
+    // one product. If it needs to change, change the constants, not the test —
+    // this reads them straight from AnimalAvatar.tsx rather than duplicating
+    // the numbers, so the two can never drift apart again.
     for (const animal of ANIMALS) {
       const hue = avatarHue(animal.id);
-      expect({ animal: animal.name, inBand: hue >= 140 && hue < 200 }).toEqual({
+      expect({ animal: animal.name, inBand: hue >= HUE_START && hue < HUE_START + HUE_RANGE }).toEqual({
         animal: animal.name,
         inBand: true,
       });

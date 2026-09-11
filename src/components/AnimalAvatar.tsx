@@ -20,11 +20,14 @@
 // two dogs are still distinguishable on a wall of sixteen, and it is stable —
 // the same animal gets the same colour on every render.
 //
-// Hue is confined to a green–teal band so sixteen cards read as one product
-// rather than a bag of skittles. Lightness is NOT set here: the card's letter
-// is `var(--paper)`, which flips between near-white and near-black with the
-// theme, so the disc has to flip with it. That lives in index.css, where the
-// theme already does.
+// Hue is confined to a band spanning the brand palette — Chile Rojo through
+// Terracotta to Olive (roughly 15°–60°) — so sixteen cards read as one warm
+// product rather than a bag of skittles. It used to sit in a green–teal band;
+// that predated the Terracotta/Chile Rojo/Olive/Sunset palette and had
+// drifted out of brand by the time that palette shipped. Lightness is NOT set
+// here: the card's letter is `var(--paper)`, which flips between near-white
+// and near-black with the theme, so the disc has to flip with it. That lives
+// in index.css, where the theme already does.
 //
 // Real photographs remain fully supported — set `photo` and add the credit in
 // `src/data/photoCredits.ts`. This is the fallback, not a ceiling.
@@ -39,9 +42,10 @@ function hash(text: string): number {
   return h;
 }
 
-/** Green through teal. Narrow on purpose — see the note above. */
-const HUE_START = 140;
-const HUE_RANGE = 60;
+/** Chile Rojo through Terracotta to Olive. Narrow on purpose — see the note
+ * above. Exported so the test can pin the band without duplicating it. */
+export const HUE_START = 15;
+export const HUE_RANGE = 45;
 
 /** The hue this animal always gets. Exported so a test can pin the spread. */
 export function avatarHue(id: string): number {
