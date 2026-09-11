@@ -15,6 +15,7 @@
 // sense once there is at least one animal to show; before that, a plain
 // "build your cohort" prompt takes their place.
 
+import { useState } from 'react';
 import type { Animal, Applicant, Cohort, GreedyResult, ImpactModel, MatchResult } from '../engine';
 import { ThroughLine } from './ThroughLine';
 import { JudgeChallenge } from './JudgeChallenge';
@@ -23,6 +24,7 @@ import { AnimalIntake } from './AnimalIntake';
 import { ApplicantIntake } from './ApplicantIntake';
 import { ResultsBoard } from './ResultsBoard';
 import { JourneyTrack } from './JourneyTrack';
+import { MatchingTransition } from './MatchingTransition';
 import type { Page } from './NavBar';
 
 /** Matches engine.compare()'s return shape exactly — see src/engine/index.ts. */
@@ -73,6 +75,18 @@ export function MatchPage({
 }) {
   const isEmpty = cohort.animals.length === 0 && cohort.applicants.length === 0;
   const hasAnimals = cohort.animals.length > 0;
+
+  // Phase 5 (Kyndra_UI_UX_Redesign_Prompt.md §13) — a brief, honest "checking
+  // the rules" narration plays once per run. The real outcome is already
+  // computed synchronously by the time this flips true (see App.tsx's
+  // useMemo) — this never gates or delays the actual match, it only delays
+  // how soon the results fade into view, so a judge sees the engine "work"
+  // instead of results simply appearing mid-click.
+  const [isRevealing, setIsRevealing] = useState(false);
+  const handleRun = () => {
+    onRun();
+    setIsRevealing(true);
+  };
 
   return (
     <main className="page">
@@ -142,7 +156,7 @@ export function MatchPage({
               cohort. Step 4 — run the engine.
             </p>
             <div className="actions" style={{ marginTop: 0 }}>
-              <button type="button" className="primary" data-testid="run-match" onClick={onRun}>
+              <button type="button" className="primary" data-testid="run-match" onClick={handleRun}>
                 Run the matching engine →
               </button>
               <button type="button" className="secondary" onClick={onToggleAnimalIntake}>
@@ -187,8 +201,12 @@ export function MatchPage({
           </div>
         ) : null}
 
+        {outcome !== null && isRevealing ? (
+          <MatchingTransition onFinish={() => setIsRevealing(false)} />
+        ) : null}
+
         {outcome !== null ? (
-          <>
+          <div className={isRevealing ? 'results-reveal results-reveal--pending' : 'results-reveal'}>
             <ResultsBoard
               result={outcome.stable}
               cohort={cohort}
@@ -234,7 +252,7 @@ export function MatchPage({
                 See why Kyndra works this way →
               </button>
             </div>
-          </>
+          </div>
         ) : null}
       </section>
     </main>

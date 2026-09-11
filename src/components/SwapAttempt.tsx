@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { attemptSwap, type Animal, type Applicant, type Cohort, type MatchOptions } from '../engine';
+import { StatusGlyph } from './StatusGlyph';
 
 interface Props {
   cohort: Cohort;
@@ -93,8 +94,12 @@ export function SwapAttempt({
       </div>
 
       {verdict !== null ? (
+        // Redesign Phase 5, §18 — "never rely only on colour": an icon and a
+        // literal label ("Swap works"/"Swap blocked") both carry the verdict,
+        // not just the tint.
         <p className={`swap__verdict${verdict.succeeds ? ' swap__verdict--succeeds' : ''}`}>
-          {verdict.succeeds ? 'Swap succeeds — not stable: ' : 'Swap fails — stable: '}
+          <StatusGlyph kind={verdict.succeeds ? 'fail' : 'ok'} />
+          <strong>{verdict.succeeds ? 'Swap works — not stable: ' : 'Swap blocked — stable: '}</strong>
           {verdict.reason}
         </p>
       ) : null}

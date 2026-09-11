@@ -34,7 +34,13 @@ export function EquityDial({ value, onChange, animals, applicants }: Props) {
 
   return (
     <section className="dial" aria-label="EquityDial">
-      <h3 className="results__heading">What should this optimise for?</h3>
+      {/* Redesign Phase 5, §19 — renamed from "What should this optimise
+          for?" to say the actual effect in plain terms. The algorithm is
+          unchanged; only the label and framing are new. */}
+      <h3 className="results__heading">Give longer-waiting animals more consideration</h3>
+      <p className="results__note">
+        Adjust how much priority goes to animals who have waited longer for a home.
+      </p>
 
       <div className="dial__row">
         <span className="dial__end">Pure want</span>
@@ -52,7 +58,7 @@ export function EquityDial({ value, onChange, animals, applicants }: Props) {
       </div>
 
       <p className="dial__value">
-        Equity weight <strong>{value.toFixed(2)}</strong>
+        Priority level <strong>{value.toFixed(2)}</strong>
         {longestWaiting !== undefined ? (
           <>
             {' '}
@@ -67,10 +73,11 @@ export function EquityDial({ value, onChange, animals, applicants }: Props) {
           guarantee, and it is the one claim on this screen a judge could actually
           catch. PRD §8 step 8 now tells the presenter the same thing out loud. */}
       <p className="dial__guardrail">
-        Within a band this dial controls — not exact ties. A longer wait can outweigh a
-        moderate preference gap, never a decisive one, and never a pairing a hard
-        constraint already eliminated. That last guarantee is the absolute one: property
-        test 2 proves it at every setting, across 500 randomised cohorts.
+        Safety and eligibility rules always come first — this dial can never reinstate a
+        pairing a hard constraint already ruled out. Within that limit, a longer wait can
+        outweigh a moderate preference gap, never a decisive one. That guarantee is the
+        absolute one: property test 2 proves it at every setting, across 500 randomised
+        cohorts.
       </p>
     </section>
   );
