@@ -107,7 +107,7 @@ export function MatchPage({
                 Kyndra in action immediately, or build your own from scratch below.
               </p>
               <div className="actions" style={{ marginTop: 0 }}>
-                <button type="button" className="primary" onClick={onLoadDemo}>
+                <button type="button" className="primary" data-testid="load-demo-cohort" onClick={onLoadDemo}>
                   Load demo cohort
                 </button>
                 <button type="button" className="secondary" onClick={onToggleAnimalIntake}>
@@ -142,7 +142,7 @@ export function MatchPage({
               cohort. Step 4 — run the engine.
             </p>
             <div className="actions" style={{ marginTop: 0 }}>
-              <button type="button" className="primary" onClick={onRun}>
+              <button type="button" className="primary" data-testid="run-match" onClick={onRun}>
                 Run the matching engine →
               </button>
               <button type="button" className="secondary" onClick={onToggleAnimalIntake}>

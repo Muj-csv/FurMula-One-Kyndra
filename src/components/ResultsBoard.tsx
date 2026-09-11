@@ -160,7 +160,7 @@ export function ResultsBoard({
 
       {/* ─── Assignments ─────────────────────────────────────────────── */}
       <h3 className="results__heading">Proposed placements</h3>
-      <ul className="pairs">
+      <ul className="pairs" data-testid="placements">
         {result.assignments.map((assignment) => (
           <li key={assignment.animalId} className="pair">
             <div className="pair__head">
