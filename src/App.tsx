@@ -161,8 +161,15 @@ export function App() {
       <IconSprite />
       <NavBar page={page} onNavigate={navigate} />
 
-      <p className="provenance" style={{ margin: '1.5rem auto 0', maxWidth: 'min(1180px, calc(100% - 40px))' }}>
-        {provenanceLabel(provenanceCohort)} {COHORT_SIZING_NOTE}
+      {/* Redesign Phase 3, §22: the same disclosure, made scannable. It was
+          a justified full-width paragraph that read as boilerplate and got
+          skipped; the badge is what a visitor actually registers, and PRD
+          §3.1 needs this seen, not merely present. Layout moved to CSS. */}
+      <p className="provenance">
+        <span className="provenance__badge">Simulated cohort</span>
+        <span>
+          {provenanceLabel(provenanceCohort)} {COHORT_SIZING_NOTE}
+        </span>
       </p>
 
       {page === 'home' ? <HomePage onNavigate={navigate} /> : null}
