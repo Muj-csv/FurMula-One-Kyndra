@@ -1335,7 +1335,14 @@ p {
 
 .constraint-grid__cell {
   font-weight: 700;
-  cursor: default;
+  /* Redesign Phase 6 — cells are clickable/tappable now (see
+     ConstraintGrid.tsx), not just hover-titled. */
+  cursor: pointer;
+}
+
+.constraint-grid__cell:focus-visible {
+  outline: 3px solid var(--terracotta);
+  outline-offset: -2px;
 }
 
 .constraint-grid__cell--ok {
