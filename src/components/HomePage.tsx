@@ -2,10 +2,31 @@
 // "how it works" explainer. Presentational only: no engine calls, no cohort
 // state. The cursor-scrub hero video is the one piece of interaction, ported
 // from shared.js's HERO DOG SCRUB block as a plain effect — no dependency.
+//
+// ─── REDESIGN PHASE 3 — ONE EXPLANATION, NOT THREE ─────────────────────────
+//
+// This page used to explain Kyndra three times on one scroll:
+//
+//   "What is Kyndra?"              two paragraphs of prose
+//   "How does Kyndra work?"        five numbered steps
+//   "Matching, without the black   three numbered steps — 01 Filter,
+//    box."                         02 Derive, 03 Find a stable match
+//
+// The third list restated steps 02-04 of the second one in more technical
+// language, which is the exact pattern the brief calls out (§7, "repeating
+// the same explanation in multiple places"). A visitor read the same idea
+// three times and was no clearer after the third.
+//
+// Now there is ONE progression (§10), in plain language, and the mechanics
+// that used to be a whole third section sit behind a disclosure — brief §15's
+// level 4, "a normal user should not be forced to understand Gale-Shapley; a
+// technical judge should still be able to inspect it". Nothing was deleted:
+// every claim the third section made is still on the page, one click down.
 
 import { useEffect, useRef } from 'react';
 import type { Page } from './NavBar';
 import { JourneyTrack } from './JourneyTrack';
+import { Disclosure } from './Disclosure';
 
 /** Timestamp (seconds) where the video's left-to-right pan ends. */
 const HORIZONTAL_PAN_END_TIME = 2.0;
@@ -15,9 +36,19 @@ function useHeroDogScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
     const video = videoRef.current;
     if (video === null) return;
 
+    // The whole feature is a CURSOR scrub, so on a touch device it is 4.2MB
+    // of video that can never be interacted with. `pointer: fine` is the
+    // honest gate: no mouse, no download.
+    //
+    // Optional-called: matchMedia is absent in jsdom, and a missing media-query
+    // API is not a reason to throw during render. No answer means no cursor
+    // to scrub with, so the heavy asset stays unfetched — the safe default.
+    if (window.matchMedia?.('(pointer: fine)').matches !== true) return;
+
     let targetTime = 0;
     let seekFrame: number | null = null;
     let videoReady = false;
+    let requested = false;
     let lastTime = -1;
 
     const seek = () => {
@@ -47,7 +78,31 @@ function useHeroDogScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
     video.addEventListener('loadedmetadata', onLoadedMetadata);
     video.addEventListener('error', onError);
 
+    // preload="none" keeps the app's heaviest asset out of the critical path,
+    // but on its own it also leaves an empty frame for anyone who never moves
+    // the cursor. So the fetch is deferred, not abandoned: once the page has
+    // finished loading and the main thread is idle, pull it in anyway.
+    const request = () => {
+      if (requested) return;
+      requested = true;
+      video.load();
+    };
+    const whenIdle = () => {
+      // Not `'requestIdleCallback' in window` — that narrows `window` itself
+      // to never in the else branch. Safari still lacks it.
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(request, { timeout: 2000 });
+      } else {
+        window.setTimeout(request, 1200);
+      }
+    };
+    if (document.readyState === 'complete') whenIdle();
+    else window.addEventListener('load', whenIdle, { once: true });
+
     const onMouseMove = (e: MouseEvent) => {
+      // Fast path: a cursor moved, so the scrub is about to be used — fetch
+      // now rather than waiting on the idle callback above.
+      request();
       if (!videoReady || !Number.isFinite(video.duration) || video.duration <= 0) return;
       const progress = Math.max(0, Math.min(1, e.clientX / Math.max(1, window.innerWidth)));
       queueSeek(progress * HORIZONTAL_PAN_END_TIME);
@@ -63,6 +118,21 @@ function useHeroDogScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
   }, [videoRef]);
 }
 
+/**
+ * The five steps, in the visitor's language rather than the pipeline's.
+ *
+ * These map onto the engine's real stages (Architecture §6: FILTER → DERIVE →
+ * MATCH → VERIFY → EXPLAIN) — the wording changed, the process did not. The
+ * engine's own names for them are in the disclosure below.
+ */
+const STEPS: { label: string; detail: string }[] = [
+  { label: 'Tell us about the household', detail: 'Home, routine, experience, and what they want.' },
+  { label: 'Check what each animal needs', detail: 'Every animal arrives with its own requirements.' },
+  { label: 'Rule out what cannot work', detail: 'Unsafe or unsuitable pairings are removed, not ranked.' },
+  { label: 'Match both sides at once', detail: 'The whole group is settled together, not first-come.' },
+  { label: 'Explain every result', detail: 'Each proposal carries the reasons behind it.' },
+];
+
 export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   useHeroDogScrub(videoRef);
@@ -72,27 +142,28 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
       <header className="hero">
         <div className="hero-inner">
           <div className="hero-copy-block">
-            <span className="eyebrow">Transparent · Explainable · Constraint-aware</span>
+            <span className="eyebrow">For animal shelters</span>
             <h1>
               Where the right homes meet the <em>right animals.</em>
             </h1>
             <p className="hero-copy">
-              Kyndra treats shelter placement as a two-sided matching problem. Hard constraints
-              remove impossible pairings, preferences stay independent, and every proposed
-              match can be inspected — and argued with.
+              Kyndra weighs what every animal needs against what every household can offer,
+              rules out the pairings that would not work, and proposes who should go with
+              whom — with the reasons attached.
             </p>
             <div className="hero-actions">
-              <button type="button" className="primary" onClick={() => onNavigate('match')}>
-                Run the matching engine
+              <button type="button" className="primary" onClick={() => onNavigate('cohort')}>
+                Start with the demo cohort
               </button>
-              <button type="button" className="secondary" onClick={() => onNavigate('cohort')}>
-                Explore the cohort
+              <button type="button" className="secondary" onClick={() => onNavigate('match')}>
+                Build your own
               </button>
             </div>
+            <p className="hero-note">Kyndra proposes. Shelter staff decide.</p>
           </div>
 
           <div className="hero-dog" aria-label="Interactive dog banner. Move your mouse to guide the dog's head.">
-            <video ref={videoRef} muted playsInline preload="auto" tabIndex={-1} aria-hidden="true">
+            <video ref={videoRef} muted playsInline preload="none" tabIndex={-1} aria-hidden="true">
               <source src="/hero-dog.mp4" type="video/mp4" />
             </video>
             <div className="hero-dog-label">Move your cursor · guide the dog</div>
@@ -101,9 +172,6 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
       </header>
 
       <main className="page">
-        {/* Phase 1.1 — Overview as onboarding. Answers "what is this", "what
-            problem does it solve", and "how does it work" in plain language,
-            before anything technical. */}
         <section id="what">
           <JourneyTrack step={1} />
           <div className="section-head section-head--tight">
@@ -111,116 +179,97 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
               <h2>What is Kyndra?</h2>
             </div>
           </div>
-          <div className="onboarding-grid">
-            <p className="onboarding-copy">
-              Kyndra is a matching system for animal shelters. It takes the animals waiting for
-              homes and the households applying to adopt, and proposes who should go with whom —
-              not by ranking pets for a person, but by weighing what both sides actually need.
-            </p>
-            <p className="onboarding-copy onboarding-copy--secondary">
-              <strong>The problem it solves:</strong> matching by hand means one coordinator
-              holding every animal&rsquo;s needs and every household&rsquo;s constraints in their
-              head at once, for every possible pairing. That does not scale past a handful of
-              animals, and it is easy to miss a conflict — or a good fit — under time pressure.
-            </p>
-          </div>
+          <p className="onboarding-copy">
+            Matching animals to homes by hand means one coordinator holding every animal&rsquo;s
+            needs and every household&rsquo;s limits in their head at once — for every possible
+            pairing. It does not scale, and under time pressure it is easy to miss a conflict,
+            or a good fit. Kyndra does that comparison in full, every time, and shows its work.
+          </p>
         </section>
 
-        {/* Full-bleed tint band — separates "how it works" from the plain
-            white sections before and after it, so the three top-level
-            sections on this page read as understand → (band) process →
-            mechanics, not three identical white blocks in a row. */}
+        {/* Full-bleed tint band — the one visual break on the page, and the
+            one thing on it a visitor has to understand. */}
         <section id="process" className="section-band">
           <div className="section-head section-head--tight">
             <div>
-              <h2>How does Kyndra work?</h2>
-              <p>Five steps, run automatically every time.</p>
+              <h2>How it works</h2>
+              <p>Five steps, run the same way every time.</p>
             </div>
           </div>
           <ol className="process-flow">
-            <li className="process-flow__step">
-              <span className="process-flow__num">01</span>
-              <strong>Build the cohort</strong>
-              <span>Animals and households enter the system.</span>
-            </li>
-            <li className="process-flow__step">
-              <span className="process-flow__num">02</span>
-              <strong>Filter</strong>
-              <span>Impossible pairings are removed.</span>
-            </li>
-            <li className="process-flow__step">
-              <span className="process-flow__num">03</span>
-              <strong>Derive</strong>
-              <span>The system considers information from both sides.</span>
-            </li>
-            <li className="process-flow__step">
-              <span className="process-flow__num">04</span>
-              <strong>Match</strong>
-              <span>A stable assignment is calculated.</span>
-            </li>
-            <li className="process-flow__step">
-              <span className="process-flow__num">05</span>
-              <strong>Review</strong>
-              <span>Staff inspect the resulting matches.</span>
-            </li>
+            {STEPS.map((step, index) => (
+              <li key={step.label} className="process-flow__step">
+                <span className="process-flow__num">{String(index + 1).padStart(2, '0')}</span>
+                <strong>{step.label}</strong>
+                <span>{step.detail}</span>
+              </li>
+            ))}
           </ol>
+
           <div className="hero-actions">
             <button type="button" className="primary" onClick={() => onNavigate('cohort')}>
-              See the Cohort Demo →
+              See it on a real cohort →
             </button>
           </div>
-        </section>
 
-        <section id="how">
-          <div className="section-head section-head--tight">
-            <div>
-              <h2>Matching, without the black box.</h2>
-              <p>The mechanics behind steps 02–04, for anyone who wants the detail.</p>
-            </div>
-          </div>
-          <div className="explainer">
-            <div>
-              <p style={{ marginTop: 0, maxWidth: '44ch', color: 'var(--ink-soft)' }}>
-                Kyndra does not act as an AI decision-maker. It proposes a stable assignment with
-                reasons. Staff remain in control, and hard constraints are treated as actual
-                constraints, not just lower scores.
-              </p>
-              <div className="reason">
-                <b>Why this matters</b>
-                A recommendation can be argued with. An opaque ranking can&rsquo;t.
-              </div>
-            </div>
+          {/* Level 4 (§15) — the mechanics, for whoever wants them. This was
+              a full third section of the page until Phase 3; every claim it
+              made is still here, one click down instead of in the scroll of
+              someone who only wanted to know what the product does. */}
+          <Disclosure
+            title="How the matching actually works"
+            teaser="The method, the guarantee it gives, and why it is not a ranking."
+          >
+            <p className="onboarding-copy onboarding-copy--secondary">
+              Kyndra is not an AI decision-maker. It proposes an assignment and explains it;
+              staff decide. Requirements are treated as actual requirements — a pairing that
+              fails one is removed outright, never just scored lower.
+            </p>
+
             <div className="steps">
               <div className="step">
                 <b>01</b>
                 <div>
-                  <strong>Filter impossible pairs</strong>
+                  <strong>Rule out the impossible</strong>
                   <br />
-                  <span>Constraint violations are eliminated, not down-ranked.</span>
+                  <span>
+                    Every animal–household pair is checked against the hard constraints
+                    first. A failure eliminates the pair; it is not down-ranked.
+                  </span>
                 </div>
               </div>
               <div className="step">
                 <b>02</b>
                 <div>
-                  <strong>Derive both sides</strong>
+                  <strong>Build both sides separately</strong>
                   <br />
-                  <span>Applicant wants ≠ animal needs. Nobody hand-ranks a list.</span>
+                  <span>
+                    What a household wants and what an animal needs are derived from
+                    different information, and never from one shared score. Nobody
+                    hand-ranks a list.
+                  </span>
                 </div>
               </div>
               <div className="step">
                 <b>03</b>
                 <div>
-                  <strong>Find a stable match</strong>
+                  <strong>Settle the whole group at once</strong>
                   <br />
                   <span>
-                    Gale–Shapley deferred acceptance settles the whole cohort at once.
-                    <br />
-                    <i>Method: Gale–Shapley deferred acceptance.</i>
+                    Gale–Shapley deferred acceptance produces a <i>stable</i> assignment:
+                    no animal and household would both rather have each other than what
+                    they were given.
                   </span>
                 </div>
               </div>
             </div>
-          </div>
+
+            <div className="reason">
+              <b>Why this matters</b>
+              A proposal with its reasons attached can be argued with. An opaque ranking
+              cannot.
+            </div>
+          </Disclosure>
         </section>
       </main>
     </>

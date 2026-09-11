@@ -11,6 +11,13 @@
 // had behaviour behind them ("coming soon" since Frontend/REVISION-PHASES.md
 // Phase 1), and a non-functional icon doesn't earn a permanent spot in the
 // nav of a presentation-ready product.
+//
+// Redesign Phase 3 (§8, "keep the header lightweight"): the right-hand
+// "Try Matching" button is gone. It navigated to the Matching page — which
+// is already the third link in this same bar — so it was a second, louder
+// route to a destination the visitor could already see, and it made the
+// header read as a landing-page banner rather than as navigation. The
+// primary actions live in the hero and on each page, where they belong.
 
 export type Page = 'home' | 'cohort' | 'match' | 'evidence';
 
@@ -40,12 +47,6 @@ export function NavBar({ page, onNavigate }: { page: Page; onNavigate: (page: Pa
             {link.label}
           </button>
         ))}
-      </div>
-
-      <div className="nav-actions">
-        <button type="button" className="nav-link quiz-link" onClick={() => onNavigate('match')}>
-          Try Matching
-        </button>
       </div>
     </nav>
   );
