@@ -20,6 +20,7 @@ import { HumanBaselinePanel } from './HumanBaselinePanel';
 import { baselineComparison } from '../data/humanBaseline';
 import { Disclosure } from './Disclosure';
 import { StatusGlyph } from './StatusGlyph';
+import { AnimalAvatar } from './AnimalAvatar';
 
 // ─── SECTION ORDER IS THE DEMO SCRIPT ORDER ────────────────────────────────
 //
@@ -79,7 +80,22 @@ export function ResultsBoard({
 
   return (
     <section className="results" aria-label="Results">
-      <h2 className="section__title">Results</h2>
+      <h2 className="sr-only">Results</h2>
+
+      {/* Redesign Phase 5, §14 — the arrival moment. The summary tiles below
+          already carry the real numbers (and the differentiators — the
+          greedy comparison, the stability count — that spec section's
+          simplified 3-stat example would have dropped); this only adds the
+          "you've arrived" framing on top of them. */}
+      <div className="results__arrival">
+        <span className="results__arrival-badge">Matching complete</span>
+        <p className="results__arrival-lede">
+          {result.assignments.length} placement{result.assignments.length === 1 ? '' : 's'} proposed
+          {unmatchedCount > 0
+            ? ` · ${unmatchedCount} still waiting for a match`
+            : ' · everyone in this cohort was placed'}
+        </p>
+      </div>
 
       <div className="results__summary">
         <div className="stat">
@@ -164,6 +180,7 @@ export function ResultsBoard({
         {result.assignments.map((assignment) => (
           <li key={assignment.animalId} className="pair">
             <div className="pair__head">
+              <AnimalAvatar id={assignment.animalId} name={animalName(assignment.animalId)} />
               <strong>{animalName(assignment.animalId)}</strong>
               <span className="pair__arrow" aria-hidden="true">
                 →

@@ -23,8 +23,11 @@ export function UnmatchedPanel({
 
   return (
     <section className="unmatched" aria-label="UnmatchedPanel">
+      {/* Redesign Phase 5, §20 — reframed from "could not place" to a
+          question, so an unmatched animal reads as an open case rather than
+          a failure. */}
       <h3 className="results__heading">
-        Animals this cohort could not place ({unmatchedAnimals.length})
+        Who still needs a match? ({unmatchedAnimals.length})
       </h3>
       {unmatchedAnimals.length === 0 ? (
         <p className="results__note">Every animal in this cohort was placed.</p>
@@ -42,7 +45,7 @@ export function UnmatchedPanel({
                 constraint.
               </p>
               <p className="pair__counterfactual">
-                Recruitment profile: {unmatched.recruitmentProfile}
+                Who should the shelter look for? {unmatched.recruitmentProfile}
               </p>
               <details className="pair__constraints">
                 <summary>Which constraint eliminated each household</summary>
