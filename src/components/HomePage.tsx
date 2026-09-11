@@ -5,6 +5,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { Page } from './NavBar';
+import { JourneyTrack } from './JourneyTrack';
 
 /** Timestamp (seconds) where the video's left-to-right pan ends. */
 const HORIZONTAL_PAN_END_TIME = 2.0;
@@ -104,27 +105,24 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
             problem does it solve", and "how does it work" in plain language,
             before anything technical. */}
         <section id="what">
+          <JourneyTrack step={1} />
           <div className="section-head section-head--tight">
             <div>
               <h2>What is Kyndra?</h2>
             </div>
           </div>
           <div className="onboarding-grid">
-            <div>
-              <p className="onboarding-copy">
-                Kyndra is a matching system for animal shelters. It takes the animals waiting for
-                homes and the households applying to adopt, and proposes who should go with whom
-                — not by ranking pets for a person, but by weighing what both sides actually need.
-              </p>
-            </div>
-            <div>
-              <p className="onboarding-copy">
-                <strong>The problem it solves:</strong> matching by hand means one coordinator
-                holding every animal&rsquo;s needs and every household&rsquo;s constraints in their
-                head at once, for every possible pairing. That does not scale past a handful of
-                animals, and it is easy to miss a conflict — or a good fit — under time pressure.
-              </p>
-            </div>
+            <p className="onboarding-copy">
+              Kyndra is a matching system for animal shelters. It takes the animals waiting for
+              homes and the households applying to adopt, and proposes who should go with whom —
+              not by ranking pets for a person, but by weighing what both sides actually need.
+            </p>
+            <p className="onboarding-copy onboarding-copy--secondary">
+              <strong>The problem it solves:</strong> matching by hand means one coordinator
+              holding every animal&rsquo;s needs and every household&rsquo;s constraints in their
+              head at once, for every possible pairing. That does not scale past a handful of
+              animals, and it is easy to miss a conflict — or a good fit — under time pressure.
+            </p>
           </div>
         </section>
 
