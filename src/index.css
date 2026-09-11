@@ -14,94 +14,191 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap');
 
+/* ═══ DESIGN TOKENS ═══════════════════════════════════════════════════════
+   Kyndra_UI_UX_Redesign_Prompt.md §3 (palette) and §32 (token system).
+
+   Two layers, on purpose:
+
+     1. RAW PALETTE — the four brand colours and the neutrals, exactly as the
+        brief specifies them. These are the source of truth and should not be
+        read directly by a component rule.
+     2. SEMANTIC ALIASES — what the rest of this stylesheet actually uses
+        (--paper, --line, --ink-soft, --terracotta-strong, …). Every existing
+        class keeps its existing token names, so retargeting the palette moved
+        the whole application without touching a single component rule.
+
+   ─── WHY SOME BRAND COLOURS HAVE AN "-ink" TWIN ─────────────────────────
+   Measured, not guessed. Ratios are WCAG 2.1 contrast against the light page
+   ground #F8F3E8, and tests/palette.test.ts re-measures every pair on each
+   run:
+
+     Terracotta #C66A32 as text        3.44:1  ✗ fails AA for body text
+     Terracotta #C66A32 behind white   3.81:1  ✗
+     Olive      #8A8635 as text        3.42:1  ✗
+     Olive      #8A8635 behind white   3.79:1  ✗
+
+   Both brand colours are mid-tone, so they work as borders, large display
+   accents and decorative fills, and fail as small text or as a fill carrying
+   white text. Rather than quietly shifting the brand colour to make it pass —
+   which loses the palette — each gets one darkened twin used wherever contrast
+   is actually required:
+
+     --terracotta-ink #955026   5.50 on page · 5.81 on surface · 6.08 w/ white
+     --olive-ink      #686528   5.45 on page · 5.13 on tint    · 6.03 w/ white
+
+   Chile Rojo #A43E1E already passes on both counts (5.77 as text, 6.39 behind
+   white), so it has no twin.
+
+   ─── DARK MODE ─────────────────────────────────────────────────────────────
+   Warm charcoal, not near-black. The previous dark ground (#211a13) read as a
+   void; this one keeps the palette's warmth at night and lifts cards a visible
+   step off the page (1.13:1 — a separation you can see without it becoming a
+   second competing surface).
+
+   The one asymmetry worth knowing: --terracotta-ink and --olive-ink do NOT
+   brighten in dark mode. They are fills that carry white text, and brightening
+   them breaks the white. Only the on-tint TEXT colours brighten. */
+
 :root {
-  --ink: #1d1812;
-  --ink-soft: #6e5a46;
-  /* #a08e76 measured ~2.8-3.2:1 as text everywhere it was used (process
-     step numbers, stage-flow labels, the equity dial's end labels) — an
-     axe-core scan is what caught it, not a visual read. Darkened to clear
-     WCAG AA's 4.5:1 (measures ~5.0:1 against white/surface); dark mode's
-     variant below is brightened the same way. */
-  --ink-faint: #756550;
-  --paper: #ffffff;
-  --paper-warm: #f7ecd4;
-  --surface: #fffcf6;
-  --line: #e0cd9f;
+  /* ─── Raw palette — brief §3 ─────────────────────────────────────────── */
+  --brand-terracotta: #c66a32;
+  --brand-chile: #a43e1e;
+  --brand-olive: #8a8635;
+  --brand-sunset: #eacb91;
+
+  --brand-ink: #30261f;
+  --brand-background: #f8f3e8;
+  --brand-surface: #fff9ef;
+  --brand-muted: #75695e;
+  --brand-border: #dccdb8;
+
+  /* Contrast-safe twins — see the header note. */
+  --terracotta-ink: #955026;
+  --olive-ink: #686528;
+
+  /* ─── Semantic surfaces ──────────────────────────────────────────────── */
+  --ink: var(--brand-ink);
+  --ink-soft: var(--brand-muted);
+  /* No third, lighter text tier. On this warm ground --ink-soft (#75695E) is
+     already 4.82:1 — anything meaningfully fainter drops under AA, and the
+     first value tried here measured 4.30:1 and was caught by
+     tests/palette.test.ts. Faintness is expressed with size and weight
+     instead, which costs no contrast. */
+  --ink-faint: var(--ink-soft);
+  --paper: var(--brand-background);
+  --paper-warm: #fbefd7;
+  --surface: var(--brand-surface);
+  --line: var(--brand-border);
   --muted: var(--ink-soft);
-  /* Brand palette — Terracotta / Chile Rojo / Olive / Sunset. Terracotta is
-     the primary-action color; Chile Rojo (--terracotta-strong) carries
-     emphasis/hover/active states; Olive is the secondary accent; Sunset is
-     the warm light-surface tint. Flat colors only — no gradients, no gloss. */
-  --terracotta: #d06224;
-  --terracotta-strong: #ae431e;
-  --terracotta-tint: #fbe7d7;
-  /* Readable terracotta TEXT — on a terracotta-tint background (nav-link.
-     active, stage-flow/stat-block highlights, the constraint grid's
-     "blocked" cell) or directly on the page background (.eyebrow, the
-     journey track's label, process-flow numbers, "Why this matters").
-     Equals --terracotta-strong in light mode; dark mode brightens it below
-     — --terracotta-strong itself stays put because it's also used as a
-     BACKGROUND (filter-btn.active, button fills) where darkening it would
-     hurt the white text sitting on top of it. */
-  --terracotta-on-tint: var(--terracotta-strong);
-  /* Same idea, for --verified text (proof stamps, the "verified matching
-     rules" pill, satisfied-constraint checkmarks). --verified itself
-     measured ~2.3-2.8:1 in dark mode against both the page background and
-     --verified-tint; this brightened value clears 4.5:1 against both. */
+
+  /* ─── Brand, as the stylesheet consumes it ───────────────────────────── */
+  --terracotta: var(--brand-terracotta);
+  /* Solid fills that carry white text, plus emphasis/hover/active states. */
+  --terracotta-strong: var(--terracotta-ink);
+  /* Terracotta TEXT — on a tinted background or directly on the page. */
+  --terracotta-on-tint: var(--terracotta-ink);
+  --terracotta-tint: #f6e4d5;
+
+  --olive: var(--brand-olive);
+  --olive-strong: var(--olive-ink);
+  --olive-tint: #edeedb;
+
+  --sunset: var(--brand-sunset);
+  --sunset-tint: #fbefd7;
+
+  --accent: var(--terracotta-ink);
+
+  /* ─── Status — never the only carrier of meaning (Architecture §8) ───── */
+  --verified: #3d6b47;
   --verified-readable: var(--verified);
-  --olive: #8a8635;
-  /* White text on raw --olive measures ~3.8:1 (needs 4.5:1) — axe-core
-     flagged it on every solid-fill usage (the "Add an animal" button, the
-     demo-mode badge, the long-stay tag). This darkened variant measures
-     ~6:1; same technique already used for the hover state below. */
-  --olive-strong: color-mix(in srgb, var(--olive) 75%, black);
-  --olive-tint: #eef0dc;
-  --sunset: #eac891;
-  --sunset-tint: #fbf1de;
-  --accent: var(--terracotta-strong);
-  --verified: #3b6b45;
-  --verified-tint: #e7efe3;
-  --eliminated: #1d1812;
-  --eliminated-tint: #eceae5;
-  --danger: #b3261e;
-  --danger-tint: #f7e6e4;
-  --radius: 10px;
+  --verified-tint: #e4eee2;
+  --eliminated: var(--ink);
+  --eliminated-tint: #ece5d8;
+  /* Chile Rojo's job in the brief: warnings, blocked states, negative
+     constraints. */
+  --danger: var(--brand-chile);
+  --danger-readable: var(--brand-chile);
+  --danger-tint: #f8e2dd;
+
+  /* ─── Space — brief §32. 4px base, at an 18px root. ──────────────────── */
+  --space-1: 0.222rem; /*  4px */
+  --space-2: 0.444rem; /*  8px */
+  --space-3: 0.667rem; /* 12px */
+  --space-4: 0.889rem; /* 16px */
+  --space-6: 1.333rem; /* 24px */
+  --space-8: 1.778rem; /* 32px */
+  --space-12: 2.667rem; /* 48px */
+  --space-16: 3.556rem; /* 64px */
+
+  /* ─── Radius ─────────────────────────────────────────────────────────── */
   --radius-sm: 6px;
+  --radius: 10px;
+  --radius-md: var(--radius);
   --radius-lg: 18px;
-  --shadow-modal: 0 20px 50px rgba(36, 35, 31, 0.18);
-  --shadow-card: 0 10px 22px -12px rgba(174, 67, 30, 0.28);
+  --radius-xl: 26px;
+  --radius-pill: 999px;
+
+  /* ─── Elevation — selective, per brief §4. ───────────────────────────── */
+  --shadow-soft: 0 1px 2px rgba(48, 38, 31, 0.05);
+  --shadow-card: 0 10px 22px -12px rgba(48, 38, 31, 0.22);
+  --shadow-modal: 0 20px 50px rgba(48, 38, 31, 0.22);
+
+  /* ─── Type scale — brief §5 ──────────────────────────────────────────── */
+  /* 0.78rem = 14px is the FLOOR. The audit found 11.16px status tags,
+     12.6px badges and 13.32px labels; nothing may go below --text-xs. */
+  --text-xs: 0.78rem; /* 14px */
+  --text-sm: 0.875rem; /* 15.75px */
+  --text-base: 1rem; /* 18px */
+  --text-lg: 1.125rem; /* 20px */
+  --text-xl: 1.35rem; /* 24px */
+  --text-2xl: 1.7rem; /* 31px */
+  --text-3xl: 2.2rem; /* 40px */
+  --text-display: clamp(2.6rem, 5.2vw, 4.35rem);
+  /* Fluid section heading — sits between --text-2xl and --text-3xl. */
+  --text-section: clamp(1.7rem, 3vw, 2.3rem);
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-body: 1.55;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 800;
+
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
 
   color-scheme: light dark;
   font-family: var(--font-body);
   font-size: 18px;
-  line-height: 1.55;
+  line-height: var(--leading-body);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #f3ece1;
-    --ink-soft: #cbb99e;
-    /* The old value measured ~3.9:1 against dark surfaces — also a fail,
-       symmetric with the light-mode fix above. Brightened to ~5.5:1. */
-    --ink-faint: #a89478;
-    --paper: #211a13;
-    --paper-warm: #2c2318;
-    --surface: #27201a;
-    --line: #473a29;
-    --terracotta-tint: #3f2a1a;
-    /* --terracotta-strong (#ae431e) on the darkened tint above measures
-       ~2.3:1 — fails WCAG even for large text (3:1). This brighter shade
-       measures ~5.3:1 against the same tint. */
-    --terracotta-on-tint: #e98a52;
-    --olive-tint: #2c2c1c;
-    --sunset-tint: #362a1a;
-    --verified-tint: #1c2b1e;
-    /* Measured against both the page background and --verified-tint above;
-       clears 4.5:1 on each (see --verified-readable's own comment). */
-    --verified-readable: #5fa06e;
-    --eliminated-tint: #2a2620;
+    --ink: #f5ede0;
+    --ink-soft: #bcab95;
+    --paper: #2a2118;
+    --paper-warm: #3a2e1d;
+    --surface: #342a1f;
+    --line: #4a3d2d;
+
+    /* TEXT colours brighten; the white-bearing fills above do not. */
+    --terracotta-on-tint: #e0925c;
+    --terracotta-tint: #3e2a1c;
+    --olive-tint: #2f2f1e;
+    --sunset-tint: #3a2e1d;
+    --verified-readable: #7fb98d;
+    --verified-tint: #1f2e22;
+    --danger-readable: #e5836a;
+    --danger-tint: #3a211d;
+    --eliminated-tint: #2e271f;
+
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 10px 22px -12px rgba(0, 0, 0, 0.55);
+    --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -111,10 +208,24 @@
 
 html {
   scroll-behavior: smooth;
+  /* The top nav is sticky and ~85px tall, so anything scrolled to by hash or
+     by .scrollIntoView() lands UNDER it. One declaration here fixes every
+     anchor in the app rather than each call site guessing an offset. */
+  scroll-padding-top: 6rem;
 }
 
 body {
   margin: 0;
+  /* A backstop, not the fix. The sideways scroll the audit measured
+     (scrollWidth 1536 vs clientWidth 1521 at a 1440px window) came from
+     `100vw` full-bleed, and that is now gone at the source — main.page's
+     grid does the bleeding. This keeps the next `100vw` someone reaches for
+     from shipping as a horizontal scrollbar.
+
+     `clip`, NOT `hidden`, and the difference matters: `overflow: hidden`
+     makes this a scroll container, which silently breaks `position: sticky`
+     for the top nav. `clip` does not. */
+  overflow-x: clip;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
@@ -131,6 +242,20 @@ input {
 
 a {
   text-decoration: none;
+}
+
+/* ─── Focus ───────────────────────────────────────────────────────────────
+   The stylesheet previously carried exactly ONE :focus-visible rule, on the
+   equity slider. Every other control — all of them custom-painted — fell back
+   to the browser default ring, which is close to invisible on a terracotta
+   fill. This is the single rule that covers the whole app.
+
+   :focus-visible, not :focus, so a mouse click does not leave a ring behind;
+   keyboard and assistive navigation still get one. */
+:where(a, button, select, input, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--terracotta);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 button {
@@ -158,50 +283,6 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
-.shell {
-  max-width: 62rem;
-  margin: 0 auto;
-  padding: 3rem 1.5rem;
-}
-
-.shell__header h1 {
-  margin: 0;
-  font-size: clamp(2.5rem, 7vw, 4rem);
-  letter-spacing: -0.03em;
-  color: var(--ink);
-}
-
-.shell__header h1 em {
-  font-style: normal;
-  color: var(--terracotta-on-tint);
-}
-
-.shell__tagline {
-  margin: 0.25rem 0 0;
-  font-size: 1.25rem;
-  color: var(--ink-soft);
-}
-
-.shell__status {
-  margin-top: 2.5rem;
-  padding: 1.25rem 1.5rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--paper-warm);
-}
-
-.shell__note,
-.placeholder__note {
-  color: var(--ink-soft);
-  font-size: 0.95rem;
-}
-
-.placeholder {
-  padding: 1rem 1.25rem;
-  border: 1px dashed var(--line);
-  border-radius: var(--radius);
-}
-
 /* Was a hardcoded rgba(220, 199, 154, ...) tan — fixed regardless of theme,
    so in dark mode it stayed light and blended with the dark page behind it
    into a muddy medium-brown that measured ~2.8:1 against --ink-soft text
@@ -216,14 +297,14 @@ p {
   background: color-mix(in srgb, var(--paper-warm) 55%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   color: var(--ink-soft);
   text-align: justify;
 }
 
 .section__title {
   margin: 2.5rem 0 1rem;
-  font-size: 1.6rem;
+  font-size: var(--text-2xl);
   color: var(--ink);
 }
 
@@ -241,10 +322,10 @@ p {
 .button {
   padding: 14px 24px;
   font: inherit;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 700;
   color: var(--ink);
-  background: var(--paper);
+  background: var(--surface);
   border: 1.5px solid var(--line);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -328,7 +409,7 @@ p {
   border: 1.5px solid var(--terracotta);
   color: var(--terracotta-on-tint);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--text-base);
   line-height: 1;
 }
 
@@ -340,12 +421,12 @@ p {
 
 .disclosure__title {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--text-base);
   color: var(--ink);
 }
 
 .disclosure__teaser {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -374,7 +455,7 @@ p {
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink-faint);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -402,7 +483,7 @@ p {
 .demo-banner p {
   margin: 0;
   color: var(--ink-soft);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   max-width: 68ch;
 }
 
@@ -412,7 +493,7 @@ p {
   border-radius: 999px;
   background: var(--olive-strong);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -430,7 +511,7 @@ p {
   padding: 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--paper);
+  background: var(--surface);
   transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -463,7 +544,7 @@ p {
 .animal__avatar {
   display: grid;
   place-items: center;
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: #fff;
   background: radial-gradient(
@@ -483,7 +564,7 @@ p {
 .credits__list {
   margin: 0;
   padding-left: 1.1rem;
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
 }
 
@@ -493,13 +574,13 @@ p {
 
 .animal__name {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: var(--text-xl);
 }
 
 .animal__meta,
 .animal__days {
   margin: 0.15rem 0 0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -519,7 +600,7 @@ p {
 
 .animal__needs li {
   padding: 0.25rem 0.6rem;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink-soft);
   border: 1px solid var(--line);
@@ -528,7 +609,7 @@ p {
 
 .animal__special {
   margin: 0.6rem 0 0;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-style: italic;
   color: var(--ink-soft);
 }
@@ -552,13 +633,13 @@ p {
 
 .intake__specific legend {
   padding: 0 0.4rem;
-  font-size: 1.05rem;
+  font-size: var(--text-base);
   font-weight: 700;
 }
 
 .intake__hint {
   margin: 0 0 0.6rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -572,7 +653,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -581,9 +662,9 @@ p {
 .intake select {
   padding: 0.55rem 0.65rem;
   font: inherit;
-  font-size: 1rem;
+  font-size: var(--text-base);
   color: var(--ink);
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
 }
@@ -610,17 +691,17 @@ p {
 
 .intake__consent legend {
   padding: 0 0.4rem;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 700;
 }
 
 .intake__consent .check {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .intake__status {
   margin: 0.6rem 0 0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -662,18 +743,18 @@ p {
 
 .stat:first-child .stat__value {
   color: var(--terracotta-on-tint);
-  font-size: 2.2rem;
+  font-size: var(--text-3xl);
 }
 
 .stat__value {
-  font-size: 1.9rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   line-height: 1.1;
   color: var(--ink);
 }
 
 .stat__label {
-  font-size: 0.74rem;
+  font-size: var(--text-xs);
   color: var(--ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -681,13 +762,13 @@ p {
 }
 
 .results__note {
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   color: var(--ink-soft);
 }
 
 .results__heading {
   margin: 2rem 0 0.75rem;
-  font-size: 1.2rem;
+  font-size: var(--text-lg);
 }
 
 .pairs {
@@ -703,7 +784,7 @@ p {
   border: 1px solid var(--line);
   border-left: 4px solid var(--terracotta);
   border-radius: var(--radius-sm);
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .pair--unmatched {
@@ -715,12 +796,12 @@ p {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
 }
 
 .pair__tag {
   padding: 0.15rem 0.55rem;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -732,7 +813,7 @@ p {
 .pair__ranks,
 .pair__counterfactual {
   margin: 0.5rem 0 0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -743,7 +824,7 @@ p {
 .pair__rationale {
   margin: 0.5rem 0 0;
   padding-left: 1.1rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 /* Phase 5 — "Compatibility" checklist, real iconography (StatusGlyph)
@@ -786,7 +867,7 @@ p {
 
 .pair__constraints {
   margin-top: 0.6rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -802,7 +883,7 @@ p {
   padding: 1.2rem 1.4rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .dial__row {
@@ -850,20 +931,20 @@ p {
 }
 
 .dial__end {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink-faint);
   white-space: nowrap;
 }
 
 .dial__value {
   margin: 0.6rem 0 0;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 700;
 }
 
 .dial__guardrail {
   margin: 0.5rem 0 0;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -874,7 +955,7 @@ p {
   padding: 1.2rem 1.4rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .swap__row {
@@ -889,7 +970,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -897,7 +978,7 @@ p {
   padding: 0.55rem 0.65rem;
   font: inherit;
   color: var(--ink);
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
 }
@@ -905,10 +986,13 @@ p {
 .swap__verdict {
   margin-top: 0.9rem;
   padding: 0.8rem 1rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   border-radius: var(--radius-sm);
   background: var(--verified-tint);
-  color: #215c3d;
+  /* Was a fixed #215c3d, on a tint that flips with the theme — so in dark
+     mode it was dark green on a dark green ground. The readable token is
+     already measured against this exact tint in both modes. */
+  color: var(--verified-readable);
 }
 
 .swap__verdict--succeeds {
@@ -962,7 +1046,7 @@ p {
 
 .transition__caption {
   margin: 0 0 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--ink-soft);
 }
@@ -979,14 +1063,14 @@ p {
   padding: 0.45rem 0.75rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  background: var(--paper);
+  font-size: var(--text-sm);
+  background: var(--surface);
 }
 
 .transition__badge {
   margin-left: 0.6rem;
   padding: 0.12rem 0.45rem;
-  font-size: 0.68rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1005,7 +1089,7 @@ p {
 
 .constraint-grid {
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
 }
 
 .constraint-grid th,
@@ -1022,7 +1106,7 @@ p {
   position: sticky;
   left: 0;
   z-index: 1;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .constraint-grid__col span {
@@ -1056,7 +1140,7 @@ p {
   gap: 0.25rem;
   max-width: 16rem;
   margin-top: 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -1065,7 +1149,7 @@ p {
   font: inherit;
   font-weight: 400;
   color: var(--ink);
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
 }
@@ -1074,7 +1158,7 @@ p {
 
 .impact__simulated {
   margin: 0 0 1rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-style: italic;
   color: var(--ink-soft);
 }
@@ -1095,7 +1179,7 @@ p {
 .impact__label {
   display: block;
   margin-bottom: 0.35rem;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -1112,7 +1196,7 @@ p {
 
 .impact__caveat {
   margin: 0.5rem 0 0;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-style: italic;
   color: var(--ink-faint);
 }
@@ -1129,14 +1213,14 @@ p {
 
 .challenge__timer {
   margin: 0.75rem 0;
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--terracotta-on-tint);
 }
 
 .challenge__verdict {
   margin: 0.5rem 0 0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -1148,17 +1232,18 @@ p {
 /* ─── Full-bleed constraint grid ────────────────────────────────────────── */
 
 @media (min-width: 66rem) {
+  /* This used to break the grid out of its column with the same `100vw`
+     trick, and carried the same scrollbar overshoot. It is already an
+     `overflow-x: auto` scroller at every width (see .grid-wrap), so it loses
+     nothing by staying inside the column — and the brief (§25) wants wide
+     tables to scroll in their own container rather than widen the page. */
   .grid-section .grid-wrap {
-    width: calc(100vw - 2rem);
-    max-width: calc(100vw - 2rem);
-    margin-left: calc(50% - 50vw + 1rem);
-    margin-right: calc(50% - 50vw + 1rem);
     display: flex;
     justify-content: center;
   }
 
   .grid-section .constraint-grid {
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 }
 
@@ -1178,18 +1263,18 @@ p {
 .throughline__portrait .animal__avatar {
   width: 5.5rem;
   height: 5.5rem;
-  font-size: 2.6rem;
+  font-size: var(--text-3xl);
 }
 
 .throughline__name {
   margin: 0 0 0.35rem;
-  font-size: 2.1rem;
+  font-size: var(--text-3xl);
   line-height: 1.1;
 }
 
 .throughline__line {
   margin: 0 0 0.6rem;
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
 }
 
 .throughline__stat {
@@ -1223,19 +1308,13 @@ p {
   padding: 16px max(20px, calc((100vw - 1180px) / 2));
 }
 
-@media (prefers-color-scheme: dark) {
-  .top-nav {
-    background: rgba(23, 19, 15, 0.92);
-  }
-}
-
 .nav-logo {
   display: flex;
   align-items: center;
   gap: 9px;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.28rem;
+  font-size: var(--text-xl);
   letter-spacing: -0.02em;
   color: var(--ink);
   transition: transform 0.12s;
@@ -1255,7 +1334,7 @@ p {
 /* Sized up specifically for the top nav, not the footer's logo mark, which
    shares these same base classes. */
 .top-nav .nav-logo {
-  font-size: 1.8rem;
+  font-size: var(--text-2xl);
 }
 
 .top-nav .logo-mark {
@@ -1277,7 +1356,7 @@ p {
   padding: 9px 15px;
   border-radius: var(--radius-sm);
   color: var(--ink-soft);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   background: color-mix(in srgb, var(--paper-warm) 45%, transparent);
@@ -1320,9 +1399,33 @@ p {
   background: color-mix(in srgb, var(--terracotta-strong) 85%, black);
 }
 
+/* Full-bleed grid, so a section can break the content column WITHOUT any
+   `100vw` arithmetic.
+
+   The old approach was `width: 100vw` plus matching negative margins, and it
+   is the reason the page scrolled sideways: `vw` counts the scrollbar, the
+   margins beside it do not, so every full-bleed band overshot the viewport by
+   exactly the scrollbar's width. Measured at a 1440px window: scrollWidth
+   1536 against clientWidth 1521.
+
+   Here the gutters are `1fr` — they resolve against the real content box, so
+   there is nothing to mismatch. `.section-band` opts into the full row; every
+   other child stays in the centred content column exactly as before. */
 main.page {
-  width: min(1180px, calc(100% - 40px));
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(20px, 1fr)
+    [content-start] min(1180px, calc(100% - 40px)) [content-end]
+    minmax(20px, 1fr) [full-end];
   margin: 0 auto 90px;
+}
+
+main.page > * {
+  grid-column: content;
+}
+
+main.page > .section-band {
+  grid-column: full;
 }
 
 /* ─── Hero ──────────────────────────────────────────────────────────────── */
@@ -1354,7 +1457,7 @@ main.page {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--terracotta-on-tint);
@@ -1372,7 +1475,7 @@ main.page {
 .hero h1 {
   max-width: 720px;
   margin: 0 0 20px;
-  font-size: clamp(2.6rem, 5.2vw, 4.35rem);
+  font-size: var(--text-display);
   line-height: 1.03;
   font-weight: 800;
   letter-spacing: -0.03em;
@@ -1388,7 +1491,7 @@ main.page {
   max-width: 610px;
   margin: 0;
   color: var(--ink-soft);
-  font-size: 1.08rem;
+  font-size: var(--text-lg);
   line-height: 1.6;
   font-weight: 500;
 }
@@ -1443,10 +1546,13 @@ main.page {
   bottom: 15px;
   padding: 8px 11px;
   border-radius: 999px;
-  background: rgba(255, 252, 246, 0.9);
-  border: 1px solid rgba(220, 199, 154, 0.9);
+  /* Hardcoded light values here stayed light in dark mode while the text
+     colour below flipped to light — an invisible label. Tokenised so both
+     sides move together. */
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 90%, transparent);
   color: var(--ink);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.01em;
   backdrop-filter: blur(8px);
@@ -1457,7 +1563,7 @@ main.page {
   padding: 14px 24px;
   border-radius: var(--radius-sm);
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   transition: transform 0.12s;
   display: inline-block;
 }
@@ -1472,7 +1578,7 @@ main.page {
 }
 
 .secondary {
-  background: var(--paper);
+  background: var(--surface);
   border: 1.5px solid var(--line);
   color: var(--ink);
 }
@@ -1499,13 +1605,13 @@ main.page {
 }
 
 .section-head h2 {
-  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  font-size: var(--text-section);
 }
 
 .section-head p {
   color: var(--ink-soft);
   margin-top: 8px;
-  font-size: 0.98rem;
+  font-size: var(--text-base);
   max-width: 46ch;
 }
 
@@ -1526,10 +1632,10 @@ main.page {
    not on pages already built from bordered panel components, where a band
    behind a card would just double the framing. */
 .section-band {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  padding: 56px max(20px, calc((100vw - 1180px) / 2)) 64px;
+  /* Full-bleed comes from the grid column above, not from vw arithmetic. The
+     inner padding re-centres its content on the same 1180px column. */
+  padding-block: 56px 64px;
+  padding-inline: max(20px, calc((100% - 1180px) / 2));
   background: var(--sunset-tint);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -1574,7 +1680,7 @@ main.page {
 }
 
 .journey__label {
-  font-size: 0.74rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1598,7 +1704,7 @@ main.page {
 .onboarding-copy {
   margin: 0;
   color: var(--ink);
-  font-size: 1.24rem;
+  font-size: var(--text-xl);
   font-weight: 500;
   line-height: 1.5;
 }
@@ -1610,7 +1716,7 @@ main.page {
   border-radius: var(--radius);
   background: var(--olive-tint);
   color: var(--ink-soft);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.6;
 }
@@ -1659,23 +1765,23 @@ main.page {
   right: -20px;
   color: var(--ink-faint);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   z-index: 1;
 }
 
 .process-flow__num {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   color: var(--terracotta-on-tint);
 }
 
 .process-flow__step strong {
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
 .process-flow__step span:last-child {
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
 }
 
@@ -1700,7 +1806,7 @@ main.page {
   border-radius: 999px;
   color: var(--verified-readable);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -1726,7 +1832,7 @@ main.page {
   border: 1px solid var(--line);
   color: var(--ink-soft);
   font-weight: 600;
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
 }
 
 /* One flat tint per filter — All / Dogs / Cats / Long-Stay, in that DOM
@@ -1794,7 +1900,7 @@ main.page {
 .card-image-wrapper .animal__avatar {
   width: 76px;
   height: 76px;
-  font-size: 2.2rem;
+  font-size: var(--text-3xl);
 }
 
 .card-photo {
@@ -1816,7 +1922,7 @@ main.page {
   width: 100%;
   background: var(--terracotta-strong);
   color: #fff;
-  font-size: 0.62rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   padding: 5px 7px;
   border-radius: 5px;
@@ -1839,7 +1945,7 @@ main.page {
 }
 
 .pet-name {
-  font-size: 1rem;
+  font-size: var(--text-base);
   transition: color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -1848,7 +1954,7 @@ main.page {
 }
 
 .pet-breed {
-  font-size: 0.76rem;
+  font-size: var(--text-xs);
   color: var(--ink-faint);
   text-align: right;
   font-weight: 600;
@@ -1856,7 +1962,7 @@ main.page {
 
 .card-location {
   color: var(--ink-faint);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   margin: 8px 0 14px;
 }
 
@@ -1866,9 +1972,9 @@ main.page {
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--ink);
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .view-details-btn:hover {
@@ -1900,7 +2006,7 @@ main.page {
 }
 
 .explainer h3 {
-  font-size: 1.7rem;
+  font-size: var(--text-2xl);
   max-width: 20ch;
 }
 
@@ -1915,14 +2021,14 @@ main.page {
   padding: 16px 18px;
   background: var(--paper-warm);
   border-radius: var(--radius);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .reason b {
   display: block;
   color: var(--terracotta-on-tint);
   margin-bottom: 4px;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
@@ -1967,7 +2073,7 @@ main.page {
 
 .step b {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: var(--text-xl);
   color: var(--ink-faint);
   font-weight: 600;
   flex-shrink: 0;
@@ -1977,13 +2083,13 @@ main.page {
 .step strong {
   display: block;
   font-weight: 700;
-  font-size: 0.98rem;
+  font-size: var(--text-base);
   margin-bottom: 4px;
 }
 
 .step span {
   color: var(--ink-soft);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
 }
 
 @media (max-width: 900px) {
@@ -2003,7 +2109,7 @@ main.page {
   border-radius: 3px;
   padding: 5px 10px;
   font-weight: 800;
-  font-size: 0.68rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.09em;
   text-transform: uppercase;
   animation: stampIn 0.16s ease-out;
@@ -2039,7 +2145,7 @@ main.page {
   padding: 1.2rem 1.4rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--paper);
+  background: var(--surface);
 }
 
 /* ─── Citation panel (evidence page) ────────────────────────────────────── */
@@ -2052,14 +2158,14 @@ main.page {
 }
 
 .citation-panel h4 {
-  font-size: 1.05rem;
+  font-size: var(--text-base);
   margin-bottom: 14px;
 }
 
 .citation-item {
   padding: 12px 0;
   border-top: 1px solid var(--line);
-  font-size: 0.87rem;
+  font-size: var(--text-sm);
   color: var(--ink-soft);
   line-height: 1.55;
 }
@@ -2077,9 +2183,9 @@ main.page {
   margin-top: 16px;
   padding: 14px 16px;
   border-radius: var(--radius-sm);
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   line-height: 1.55;
   color: var(--ink-soft);
 }
@@ -2099,8 +2205,11 @@ main.page {
      white logo and light-gray text, an axe-core scan caught the resulting
      ~1.2-1.8:1 contrast. --eliminated is a fixed near-black in both modes,
      matching this footer's actual design intent: always a dark band. */
-  background: var(--eliminated);
-  color: #d9d3c6;
+  /* --brand-ink, NOT --eliminated/--ink: those invert with the theme, and
+     this band is deliberately dark in BOTH modes (see the note above). The
+     raw palette value is the one that does not move. */
+  background: var(--brand-ink);
+  color: #e3dacb;
 }
 
 .footer-content {
@@ -2120,7 +2229,7 @@ main.page {
 .footer-brand p {
   margin-top: 10px;
   color: #b8b0a0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   line-height: 1.6;
 }
 
@@ -2132,7 +2241,7 @@ main.page {
   margin-top: 36px;
   padding-top: 20px;
   color: #9a9385;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
 }
 
 /* Plain text, not links — there are no real destination pages for these
@@ -2164,7 +2273,7 @@ main.page {
   width: min(540px, 100%);
   padding: 30px;
   border-radius: 16px;
-  background: var(--paper);
+  background: var(--surface);
   box-shadow: var(--shadow-modal);
   position: relative;
   max-height: 86vh;
@@ -2180,8 +2289,8 @@ main.page {
   border-radius: 50%;
   background: var(--surface);
   border: 1px solid var(--line);
-  font-weight: 700;
-  font-size: 18px;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
 }
 
 .modal .close:hover {
@@ -2206,7 +2315,7 @@ main.page {
 }
 
 .modal h2 {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   margin-top: 16px;
 }
 
@@ -2261,10 +2370,10 @@ main.page {
     padding-top: 40px;
   }
   .hero h1 {
-    font-size: 2.4rem;
+    font-size: var(--text-3xl);
   }
   .hero-copy {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
   .hero-dog {
     min-height: 320px;
@@ -2284,5 +2393,23 @@ main.page {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+    scroll-padding-top: 6rem;
+  }
+
+  /* This block used to reset scroll-behavior and nothing else, while the
+     sheet carried a dozen transitions and an animation — so "reduce motion"
+     reduced almost none of it. Brief §26 adds more motion, which makes
+     honouring the preference matter more, not less.
+
+     Motion is near-eliminated rather than removed outright: 0.01ms still
+     fires transitionend/animationend, so any script waiting on one does not
+     hang. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
