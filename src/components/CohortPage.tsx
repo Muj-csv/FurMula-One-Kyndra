@@ -126,7 +126,7 @@ export function CohortPage({
           </button>
         </div>
 
-        <div className="companion-grid">
+        <div className="companion-grid" data-testid="cohort-grid">
           {visible.map((animal) => {
             const longStay = animal.daysInShelter >= 180;
             return (
