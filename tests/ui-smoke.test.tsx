@@ -116,7 +116,12 @@ describe('households are described, not just numbered', () => {
     fireEvent.click(screen.getByTestId('run-match'));
 
     const rows = [...screen.getByTestId('placements').querySelectorAll(':scope > li')];
-    const described = rows.map((row) => row.querySelector('.pair__household')?.textContent ?? '');
+    // The description sits on the household side of the match. It was its own
+    // .pair__household paragraph until Phase 7 folded it into the two-sided
+    // card, where it belongs to the household rather than floating under both.
+    const described = rows.map(
+      (row) => row.querySelector('.pair__side--household .pair__side-meta')?.textContent ?? '',
+    );
 
     expect(described).toHaveLength(rows.length);
     expect(described.every((text) => text.length > 0)).toBe(true);
@@ -125,6 +130,31 @@ describe('households are described, not just numbered', () => {
     // stop being interchangeable. If every row says the same thing it has
     // added words without adding information.
     expect(new Set(described).size).toBeGreaterThan(1);
+  });
+});
+
+describe('the counterfactual is reachable without a mouse', () => {
+  // Audit F8. It used to be a hover-reveal, labelled "What if this pairing
+  // hadn't happened? (hover)" — an instruction inside a label, with the
+  // answer behind :hover and :focus-within. On a touch device there is no
+  // hover, so the content simply could not be reached.
+  it('lives inside a real disclosure, not behind :hover', () => {
+    renderAt('match');
+    fireEvent.click(screen.getByTestId('load-demo-cohort'));
+    fireEvent.click(screen.getByTestId('run-match'));
+
+    const firstRow = screen.getByTestId('placements').querySelector(':scope > li');
+    expect(firstRow).toBeTruthy();
+
+    // No trigger, and no "(hover)" anywhere in the instructions.
+    expect(firstRow!.querySelector('.pair__counterfactual-trigger')).toBeNull();
+    expect(firstRow!.textContent).not.toMatch(/\(hover\)/i);
+
+    // The answer is inside a <details> the user can open — which is what
+    // makes it work on a touchscreen.
+    const details = firstRow!.querySelector('details');
+    expect(details).toBeTruthy();
+    expect(details!.querySelector('.pair__counterfactual')?.textContent ?? '').not.toBe('');
   });
 });
 

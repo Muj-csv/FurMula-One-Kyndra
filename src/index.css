@@ -883,12 +883,17 @@ p {
    which keep the full, honest numbers (including the differentiators —
    greedy comparison, stability — the spec's simplified 3-stat example
    would have dropped). */
+/* The outcome deserves a moment (§14). The badge and the sentence used to
+   sit on one baseline, which made the whole thing read as a status bar —
+   the same shape as a progress indicator. Stacked, with the sentence in the
+   display face at heading size, it reads as the answer to the question the
+   visitor just asked. */
 .results__arrival {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.6rem 0.9rem;
-  margin-bottom: 0.9rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
 .results__arrival-badge {
@@ -904,9 +909,12 @@ p {
 
 .results__arrival-lede {
   margin: 0;
-  font-size: var(--text-lg);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
   color: var(--ink);
+  max-width: var(--measure-tight);
 }
 
 .results__summary {
@@ -1000,21 +1008,85 @@ p {
   border-left-color: var(--ink-faint);
 }
 
-.pair__head {
-  display: flex;
+/* ─── The match itself — polish Phase 7, §14 ──────────────────────────────
+   This was one run of text: avatar, name, arrow, name. That is a SENTENCE
+   about a match rather than a picture of one, and at fourteen rows it read
+   as a list of strings.
+
+   Two sides with a link between them. Each side carries its own identity —
+   the animal's wait, the household's description — so a row answers "who
+   are these two?" before it argues why they belong together. */
+.pair__match {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.6rem;
-  font-size: var(--text-lg);
+  gap: var(--space-3);
 }
 
-/* Redesign Phase 5, §14 — visually connect the animal to the household it
-   was placed with, instead of two bare names either side of an arrow. Sized
-   down from the 3rem default (CohortPage's card-scale portrait) to sit
-   inline with pair__head's text. */
-.pair__head .animal__avatar {
-  width: 2rem;
-  height: 2rem;
+.pair__side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* The household reads right-to-left into the link, so the two sides mirror
+   about it rather than both running left. */
+.pair__side--household {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.pair__side-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pair__side-body strong {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
+  color: var(--ink);
+}
+
+.pair__side-meta {
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.pair__link {
+  flex-shrink: 0;
+  color: var(--terracotta);
+  font-size: var(--text-xl);
+  line-height: 1;
+}
+
+.pair__match .animal__avatar {
+  width: 2.4rem;
+  height: 2.4rem;
   font-size: var(--text-base);
+  flex-shrink: 0;
+}
+
+/* Below this the three-column match would crush both names into two or three
+   characters each, so it stacks and the link turns to point downward. */
+@media (max-width: 40rem) {
+  .pair__match {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: var(--space-2);
+  }
+
+  .pair__side--household {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .pair__link {
+    transform: rotate(90deg);
+  }
 }
 
 .pair__tag {
@@ -1026,15 +1098,6 @@ p {
   border-radius: var(--radius-pill);
   color: var(--verified-readable);
   background: var(--verified-tint);
-}
-
-/* The household, described rather than numbered — polish Phase 6, audit F3.
-   Sits directly under the pairing so the row answers "who is this household?"
-   before it explains why they were chosen. */
-.pair__household {
-  margin: 2px 0 0;
-  color: var(--ink-soft);
-  font-size: var(--text-xs);
 }
 
 .pair__ranks,
@@ -1273,27 +1336,22 @@ p {
   color: var(--danger);
 }
 
-/* ─── Counterfactual on hover ───────────────────────────────────────────── */
+/* ─── Counterfactual ──────────────────────────────────────────────────────
+   Audit F8. This used to be a hover-reveal: a trigger reading "What if this
+   pairing hadn't happened? (hover)" — an instruction inside a label, set in
+   italics, with the answer hidden behind :hover and :focus-within.
 
-.pair__counterfactual-trigger {
-  cursor: help;
-  font-style: italic;
-  border-bottom: 1px dotted var(--ink-faint);
-}
+   On a touch device there is no hover, so the content was simply
+   unreachable. It now lives inside the card's own <details>, where it needs
+   no instruction and works on every input. The rules that did the revealing
+   are deleted; what remains is the paragraph's own type.
+   ────────────────────────────────────────────────────────────────────────*/
 
-.pair__counterfactual-text {
-  display: block;
-  margin-top: 0.35rem;
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: opacity 200ms ease, max-height 200ms ease;
-}
-
-.pair__counterfactual:hover .pair__counterfactual-text,
-.pair__counterfactual:focus-within .pair__counterfactual-text {
-  opacity: 1;
-  max-height: 8rem;
+.pair__evidence-head {
+  margin: 0.9rem 0 0.35rem;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
 }
 
 /* ─── Greedy → stable transition ────────────────────────────────────────── */
