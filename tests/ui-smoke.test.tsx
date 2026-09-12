@@ -23,7 +23,7 @@
 // Rename any heading, any button, any sentence: these still pass. Break a
 // screen, and they don't.
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { cleanup, render, screen, fireEvent, within } from '@testing-library/react';
 import { App } from '../src/App';
 import { ApplicantIntake } from '../src/components/ApplicantIntake';
@@ -45,100 +45,23 @@ function renderAt(hash: string) {
 }
 
 /**
- * Answer the two media queries the hero dog asks about.
+ * Answer the one media query the hero asks about.
  *
- * jsdom has no matchMedia at all, so without this the tracking hook returns
- * at its first guard and none of the behaviour below is reached. Callers are
- * responsible for restoring the original — these tests stub a global.
+ * jsdom has no matchMedia at all, so without this the component reads
+ * "no preference expressed" and the reduced-motion branch is never reached.
+ * Callers restore the original — this stubs a global.
  */
-function stubPointer(finePointer: boolean, reducedMotion = false) {
+function stubReducedMotion(reduced: boolean) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     writable: true,
     value: (query: string) => ({
-      matches: query.includes('pointer: fine')
-        ? finePointer
-        : query.includes('prefers-reduced-motion')
-          ? reducedMotion
-          : false,
+      matches: query.includes('prefers-reduced-motion') ? reduced : false,
       media: query,
       addEventListener: () => {},
       removeEventListener: () => {},
     }),
   });
-}
-
-/** How many of the recorded fetches asked for a dog frame. */
-function frameRequests(spy: { mock: { calls: unknown[][] } }): number {
-  return spy.mock.calls.filter(([input]) => String(input).includes('/hero-dog/')).length;
-}
-
-/**
- * Make the frame-loading path reachable in jsdom, and controllable.
- *
- * Three things are in the way, and each would otherwise make a "no frames
- * were fetched" assertion pass for the wrong reason:
- *
- *   1. jsdom has no createImageBitmap, so the hook returns before loading.
- *   2. jsdom has no requestIdleCallback, so the load is behind a setTimeout
- *      the test has to drive.
- *   3. jsdom's canvas.getContext('2d') returns null — it implements no 2D
- *      context without the native `canvas` package, which is not worth a
- *      build dependency for one drawImage call.
- *   4. fetch would hit the network.
- *
- * The positive-control test below fails if this stub stops working, which is
- * what keeps the negative tests honest.
- */
-function stubFrameLoading() {
-  const realCreate = Reflect.get(globalThis, 'createImageBitmap');
-  const realIdle = Reflect.get(window, 'requestIdleCallback');
-  const realGetContext = HTMLCanvasElement.prototype.getContext;
-
-  HTMLCanvasElement.prototype.getContext = function stub(kind: string) {
-    return kind === '2d' ? ({ drawImage: () => {} } as unknown as CanvasRenderingContext2D) : null;
-  } as typeof HTMLCanvasElement.prototype.getContext;
-
-  Object.defineProperty(globalThis, 'createImageBitmap', {
-    configurable: true,
-    writable: true,
-    value: async () => ({ close: () => {} }) as unknown as ImageBitmap,
-  });
-  // Force the setTimeout branch, which fake timers can drive.
-  Reflect.deleteProperty(window, 'requestIdleCallback');
-
-  const fetches = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(new Blob([])));
-
-  return {
-    fetches,
-    restore() {
-      fetches.mockRestore();
-      HTMLCanvasElement.prototype.getContext = realGetContext;
-      if (realCreate === undefined) Reflect.deleteProperty(globalThis, 'createImageBitmap');
-      else Object.defineProperty(globalThis, 'createImageBitmap', {
-        configurable: true, writable: true, value: realCreate,
-      });
-      if (realIdle !== undefined) {
-        Object.defineProperty(window, 'requestIdleCallback', {
-          configurable: true, writable: true, value: realIdle,
-        });
-      }
-    },
-  };
-}
-
-/** Mount, then run past the idle delay the loader sits behind. */
-async function mountAndLoad() {
-  vi.useFakeTimers();
-  try {
-    renderAt('');
-    // The loader waits for window 'load' unless the document is already
-    // complete; jsdom may be either, so satisfy both.
-    window.dispatchEvent(new Event('load'));
-    await vi.advanceTimersByTimeAsync(2000);
-  } finally {
-    vi.useRealTimers();
-  }
 }
 
 describe('every page mounts', () => {
@@ -308,124 +231,74 @@ describe('theme', () => {
   });
 });
 
-describe('the hero scrub on a browser that is missing things', () => {
-  // jsdom has no matchMedia, so the scrub hook returns before it reaches
-  // anything else — which means its platform guards are never exercised by
-  // the other tests in this file. This test pretends to be a fine-pointer
-  // browser so the rest of the hook actually runs.
-  //
-  // It exists because this exact class of bug has now bitten twice: an
-  // unguarded window.matchMedia call threw during render in Phase 3, and the
-  // same shape of mistake was available again with IntersectionObserver.
-  it('renders where IntersectionObserver does not exist', () => {
-    const realMatchMedia = window.matchMedia;
-    const realObserver = window.IntersectionObserver;
-
-    // A desktop browser: fine pointer, no reduced-motion preference.
-    Object.defineProperty(window, 'matchMedia', {
-      configurable: true,
-      writable: true,
-      value: (query: string) => ({
-        matches: query.includes('pointer: fine'),
-        media: query,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-      }),
-    });
-    // …but an old one, with no IntersectionObserver.
-    // @ts-expect-error deliberately removing a platform API for this test
-    delete window.IntersectionObserver;
-
-    try {
-      expect(() => renderAt('')).not.toThrow();
-      expect(document.querySelector('.hero-dog')).toBeTruthy();
-    } finally {
-      window.matchMedia = realMatchMedia;
-      window.IntersectionObserver = realObserver;
-    }
-  });
-
-  // jsdom has no createImageBitmap either, which is now the third platform
-  // API the hook has to survive the absence of. Same class of bug as the two
-  // above, so it gets the same treatment.
-  it('renders where createImageBitmap does not exist', () => {
-    const realMatchMedia = window.matchMedia;
-    stubPointer(true);
-    try {
-      expect(typeof createImageBitmap).toBe('undefined'); // the premise
-      expect(() => renderAt('')).not.toThrow();
-      expect(document.querySelector('.hero-dog__still')).toBeTruthy();
-    } finally {
-      window.matchMedia = realMatchMedia;
-    }
-  });
-});
-
 /**
- * The still image is the whole fallback story, so it is worth pinning.
+ * The hero dog is an ambient loop, and the only thing about it worth pinning
+ * is that it stays ambient: it must autoplay silently, repeat forever, never
+ * demand a gesture, and never play for someone who asked for less motion.
  *
- * The <video> this replaced shipped `preload="none"` and was the only thing
- * in the box, so a touch device, a reduced-motion preference, or a failed
- * load each produced an empty warm rectangle where the hero's dog should be.
- * The still cannot do that: it is plain markup, it loads everywhere, and it
- * is what the canvas fades in over rather than replaces.
+ * The cursor-tracking tests that used to live here are gone with the feature
+ * — there is no pointer behaviour left to guard.
  */
-describe('the hero dog without any interaction', () => {
-  it('always renders the neutral still, with real alt text', () => {
+describe('the hero dog loop', () => {
+  const heroVideo = () => document.querySelector('.hero-dog__video') as HTMLVideoElement | null;
+
+  it('is a muted, looping, inline autoplay video', () => {
     renderAt('');
-    const still = document.querySelector('.hero-dog__still') as HTMLImageElement | null;
-    expect(still).toBeTruthy();
-    // Index 16 is the forward-facing pose — the rest position the head eases
-    // back to, and the one frame that has to look right standing alone.
-    expect(still?.getAttribute('src')).toBe('/hero-dog/frame-16.webp');
-    expect(still?.getAttribute('alt')).toMatch(/\w/);
-    // Dimensions on the element, so the box does not reflow when it decodes.
-    expect(still?.getAttribute('width')).toBe('512');
-    expect(still?.getAttribute('height')).toBe('910');
+    const video = heroVideo();
+    expect(video).toBeTruthy();
+    // muted + playsInline are what make autoplay permissible at all; without
+    // either one, browsers refuse and the hero silently becomes a poster.
+    expect(video?.hasAttribute('muted') || video?.muted).toBeTruthy();
+    expect(video?.hasAttribute('playsinline')).toBe(true);
+    expect(video?.hasAttribute('loop')).toBe(true);
+    expect(video?.hasAttribute('autoplay')).toBe(true);
+    expect(video?.hasAttribute('controls')).toBe(false);
   });
 
-  it('hides the canvas from assistive tech — the still carries the meaning', () => {
+  it('carries a poster, so the box is never an empty rectangle', () => {
     renderAt('');
-    expect(document.querySelector('.hero-dog__canvas')?.getAttribute('aria-hidden')).toBe('true');
+    // This is the whole fallback story: before the video arrives, if it never
+    // arrives, and under reduced motion, the poster is what stands in.
+    expect(heroVideo()?.getAttribute('poster')).toBe('/hero-dog-poster.webp');
+    // Intrinsic size on the element, so the box does not reflow on decode.
+    expect(heroVideo()?.getAttribute('width')).toBe('720');
+    expect(heroVideo()?.getAttribute('height')).toBe('1280');
   });
 
-  // POSITIVE CONTROL. Without this the two tests below pass for the wrong
-  // reason the moment the loader moves, and nobody finds out.
-  it('fetches every frame once, on a desktop browser that can use them', async () => {
+  it('is described once, as a picture, not as a media player', () => {
+    renderAt('');
+    const stage = document.querySelector('.hero-dog');
+    // A decorative autoplaying video announces nothing useful on its own, and
+    // would offer media controls it does not have. The wrapper carries the
+    // description; the video is hidden from assistive tech.
+    expect(stage?.getAttribute('role')).toBe('img');
+    expect(stage?.getAttribute('aria-label')).toMatch(/\w/);
+    expect(heroVideo()?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('does not autoplay for a visitor who asked for reduced motion', () => {
     const realMatchMedia = window.matchMedia;
-    const loading = stubFrameLoading();
-    stubPointer(true);
+    stubReducedMotion(true);
     try {
-      await mountAndLoad();
-      expect(frameRequests(loading.fetches)).toBe(34);
+      renderAt('');
+      // The attribute is the only thing that can decide the FIRST frame,
+      // before any effect has run — so it has to be absent, not merely
+      // countermanded afterwards.
+      expect(heroVideo()?.hasAttribute('autoplay')).toBe(false);
     } finally {
-      loading.restore();
       window.matchMedia = realMatchMedia;
     }
   });
 
-  it('fetches no frames on a touch device', async () => {
+  // POSITIVE CONTROL for the test above. Without it, that assertion would
+  // keep passing if the stub stopped reaching the component at all.
+  it('does autoplay when no such preference is expressed', () => {
     const realMatchMedia = window.matchMedia;
-    const loading = stubFrameLoading();
-    stubPointer(false);
+    stubReducedMotion(false);
     try {
-      await mountAndLoad();
-      expect(frameRequests(loading.fetches)).toBe(0);
+      renderAt('');
+      expect(heroVideo()?.hasAttribute('autoplay')).toBe(true);
     } finally {
-      loading.restore();
-      window.matchMedia = realMatchMedia;
-    }
-  });
-
-  it('fetches no frames when the visitor asked for reduced motion', async () => {
-    const realMatchMedia = window.matchMedia;
-    const loading = stubFrameLoading();
-    stubPointer(true, true);
-    try {
-      await mountAndLoad();
-      expect(frameRequests(loading.fetches)).toBe(0);
-    } finally {
-      loading.restore();
       window.matchMedia = realMatchMedia;
     }
   });
