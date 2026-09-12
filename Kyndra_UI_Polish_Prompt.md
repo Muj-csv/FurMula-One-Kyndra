@@ -43,20 +43,24 @@ For every phase:
 3. Name the files you will touch, and confirm no one else is in them.
 4. Implement.
 5. Run the full test suite and the production build.
-6. Review the rendered result in **both** themes.
-7. Summarize what changed.
-8. Commit, push, and open a PR — with a description (§0.3).
-9. **Get that PR merged before starting the next phase.**
+6. Run the frontend-only check in §0.5 and confirm it passes.
+7. Review the rendered result in **both** themes.
+8. Summarize what changed.
+9. Commit, push, and open a PR — with a description (§0.3).
+10. **Get that PR merged before starting the next phase.**
 
-Step 9 is not optional. It is the primary merge-conflict control in §0.2.
+Step 10 is not optional. It is the primary merge-conflict control in §0.2.
+
+## Never — see §0.5
+
+- Anything in `src/engine/`, `src/data/`, or `scripts/`
+- Any test that pins engine or data behaviour
 
 ## Ask before
 
-- Changing anything in `src/engine/`
-- Changing anything in `src/data/`
 - Changing a research claim, a citation, or a provenance statement
 - Replacing the logo or any brand asset
-- Adding a runtime dependency
+- Adding a dependency of any kind
 
 ## Decide yourself
 
@@ -231,6 +235,69 @@ only if Phase 1's `palette.test.ts` work has already merged.
 
 ---
 
+# 0.5 FRONTEND ONLY — THE SCOPE BOUNDARY
+
+**Every change in this document is a frontend change. Nothing here may alter
+the backend.**
+
+This app has no server, so "backend" means the parts that decide *what is
+true* rather than *how it looks*: the matching engine, the data it runs on,
+and the tests that pin both.
+
+## May change
+
+```text
+src/components/**      UI components
+src/App.tsx            the shell
+src/index.css          styling
+index.html             document head, theme bootstrap
+public/**              static assets
+tests/palette.test.ts  tokens — presentation only
+tests/ui-smoke.test.tsx render smoke tests
+.gitattributes         repo hygiene
+```
+
+## Must not change — no exceptions, no "ask first"
+
+```text
+src/engine/**          the matching engine and its public surface
+src/data/**            cohort records, research constants, baselines,
+                       survey capture, photo credits
+scripts/**             CSV → committed-data converters
+tests/engine.test.ts           tests/narrative.test.ts         |  these pin engine and data behaviour.
+tests/cohort-editing.test.ts    |  If a UI change makes one of these fail,
+tests/human-baseline.test.ts    |  the UI change is wrong. Fix the UI.
+tests/aggregate-report.test.ts  |
+tests/photos.test.ts            |
+tests/survey-capture.test.ts   /
+```
+
+## The rule this follows from
+
+The UI **reads** the engine and the data. It never writes to them, never
+reshapes them, and never adjusts them to make a screen look better.
+
+If a screen would look better with different data, that is a finding to raise
+with the project head — not a change to make. Architecture §3 already says the
+engine is single-owner and that `index.ts` is its only public surface; this
+section extends the same rule to `src/data/`, which is narrative-pinned by
+`tests/narrative.test.ts`.
+
+Reading is always fine. Rendering a household's `homeType`, `hasOtherPets` and
+`hoursAwayPerDay` as a descriptive line is a frontend change. Editing that
+household's record is not.
+
+## Verify it, every phase, before you open the PR
+
+```bash
+git diff --name-only origin/main...HEAD   | grep -E '^(src/engine|src/data|scripts)/'   && echo 'BACKEND TOUCHED — stop and revert'   || echo 'frontend only'
+```
+
+Paste the result into the PR description. A phase whose diff touches a
+forbidden path does not get merged, however good the change looks.
+
+---
+
 # 1. WHAT IS ALREADY DONE — DO NOT REDO
 
 - The brand palette is correct and enforced by `tests/palette.test.ts`
@@ -312,12 +379,20 @@ Taken on `main`, desktop, 1521 px viewport.
 
 # 4. WHAT MUST NOT CHANGE
 
+**§0.5 is the enforceable version of this list. Read it before you start.**
+
 - The matching engine, its public surface, and its results
+- Every record in `src/data/` — cohort, research constants, baselines
+- The converter scripts in `scripts/`
 - Research claims, citations, sample sizes, and the simulated/real distinction
 - "Kyndra proposes. Shelter staff decide."
 - The narrative values pinned by `tests/narrative.test.ts`
 - The brand palette values enforced by `tests/palette.test.ts`
 - No new runtime dependency, no backend, no UI framework
+
+Every phase below changes how Kyndra **looks**. None of them changes what
+Kyndra **computes**. If a phase seems to require otherwise, you have
+misread it — stop and ask.
 
 ---
 
@@ -463,16 +538,25 @@ Closes: F3, F9, F10.
    "Barnaby → Household 22". Animals get real names; households get serial
    numbers.
 
-   There is a genuine tension here: the provenance line says "placeholder
-   households", so the numbering is arguably deliberate honesty, and
-   `src/data/cohort.ts` is narrative-pinned and off limits under Rule 7.
+   **This is fixed in the UI, not in the data.** `src/data/cohort.ts` is
+   off limits under §0.5 — it is narrative-pinned by `tests/narrative.test.ts`,
+   and the provenance line calls these households "placeholder" on purpose, so
+   renaming the records would also weaken a deliberate honesty statement.
 
-   **Preferred fix — presentational, no data change, claims nothing:** keep
-   the name and render a one-line descriptor beside it from fields the engine
-   already has, e.g. *"Household 22 · Apartment, no pets, home most of the
-   day"*. Each row becomes distinct and informative.
+   **The fix:** keep the name exactly as it is, and render a one-line
+   descriptor beside it, composed at render time from fields the UI already
+   receives — `homeType`, `hasYard`, `hasChildren`, `hasOtherPets`,
+   `hoursAwayPerDay`, `experience`. For example:
 
-   **Ask before** doing anything that renames the records themselves.
+   > **Household 22** · Apartment, no pets, home most of the day
+
+   Every row becomes distinct and informative, the data is untouched, and
+   nothing new is claimed. Reading a record to describe it is a frontend
+   change; editing the record is not.
+
+   Do not propose renaming the records as an alternative. If you believe the
+   naming is genuinely wrong, raise it with the project head as a finding —
+   it is not part of this work.
 
 2. **`✓ Verified matching rules`** — attribute it or remove it. An
    unattributed trust badge reads as decoration and slightly *reduces*
@@ -519,8 +603,9 @@ own fix commit with its own description.
 
 Check, on the merged result:
 
-- `npm test` — all green
+- `npm test` — all green, including every engine and narrative test
 - `npm run build` — clean
+- The §0.5 frontend-only check, against `origin/main`
 - Every page, **light and dark**
 - First visit with no `localStorage` is light
 - Desktop, tablet, mobile; no horizontal scrollbar at any width
@@ -564,6 +649,8 @@ Do not weaken a test to make a phase pass.
 10. Does every commit in the branch explain *why* it exists?
 11. Did any phase produce a merge conflict? If so, which rule in §0.2 would
     have prevented it?
+12. Does `git diff --name-only` across the whole effort show a single file
+    under `src/engine/`, `src/data/` or `scripts/`? It must not.
 
 ---
 
