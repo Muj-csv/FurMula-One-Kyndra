@@ -330,10 +330,18 @@ function useHeroDogTracking(
           const entry = entries[0];
           if (entry === undefined) return;
           onScreen = entry.isIntersecting;
-          if (!onScreen && loop !== null) {
+          if (onScreen) return;
+          if (loop !== null) {
             cancelAnimationFrame(loop);
             loop = null;
           }
+          // Finish the turn instantly rather than abandoning it half done.
+          // Cancelling the loop mid-ease would leave the head frozen at
+          // whatever angle it had reached when the hero scrolled away, and
+          // that is the pose the visitor would find on the way back up. One
+          // drawImage, off screen, buys a defined resting state.
+          current = target;
+          draw();
         },
         { threshold: 0 },
       );
