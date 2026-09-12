@@ -31,10 +31,60 @@ import { Disclosure } from './Disclosure';
 /** Timestamp (seconds) where the video's left-to-right pan ends. */
 const HORIZONTAL_PAN_END_TIME = 2.0;
 
-function useHeroDogScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
+/** Fraction of the remaining distance covered each frame. Lower = heavier. */
+const EASE = 0.16;
+
+/** Below this gap (seconds) the head has arrived; stop animating. */
+const SETTLE = 0.004;
+
+/** Don't issue a seek for a movement smaller than this. */
+const MIN_STEP = 0.004;
+
+/**
+ * The cursor scrub on the hero video.
+ *
+ * ─── WHAT WAS WRONG WITH THIS ──────────────────────────────────────────────
+ *
+ * Three things, and only the first one was visible:
+ *
+ *   1. It never loaded — fixed in the previous commit (preload before load).
+ *
+ *   2. It listened on `window` and mapped the cursor across the whole
+ *      viewport, so the dog reacted to movement anywhere on the page,
+ *      including while the hero was scrolled far out of view. A head turning
+ *      in a box you cannot see, driven by a cursor that is reading paragraph
+ *      four, is not an interaction — it is a loose event handler.
+ *
+ *   3. It wrote `video.currentTime` on every pointer move. Each write
+ *      cancels the seek in flight, so on a 4.2MB MP4 the decoder never
+ *      finishes one frame before being sent somewhere else, and the result
+ *      stutters however fast the network is.
+ *
+ * ─── WHAT IT DOES NOW ──────────────────────────────────────────────────────
+ *
+ * Tracks against the hero SECTION, not the viewport and not the little video
+ * box. The section is the full-width band the cursor is already moving
+ * through while reading the headline, which is what makes the effect
+ * discoverable; the 370px video box would require hovering the dog itself.
+ * Listening on that element means we simply get no events when the cursor is
+ * elsewhere, rather than getting events and discarding them.
+ *
+ * An IntersectionObserver adds the other half: no work at all while the hero
+ * is off screen.
+ *
+ * Between the cursor and the video sits an eased follow — the head moves
+ * toward where you are rather than snapping to it — and a seek is skipped
+ * entirely while another is still in flight, which is what stops the
+ * stuttering.
+ */
+function useHeroDogScrub(
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  heroRef: React.RefObject<HTMLElement | null>,
+) {
   useEffect(() => {
     const video = videoRef.current;
-    if (video === null) return;
+    const hero = heroRef.current;
+    if (video === null || hero === null) return;
 
     // The whole feature is a CURSOR scrub, so on a touch device it is 4.2MB
     // of video that can never be interacted with. `pointer: fine` is the
@@ -45,65 +95,35 @@ function useHeroDogScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
     // to scrub with, so the heavy asset stays unfetched — the safe default.
     if (window.matchMedia?.('(pointer: fine)').matches !== true) return;
 
-    let targetTime = 0;
-    let seekFrame: number | null = null;
-    let videoReady = false;
+    // Reduced motion suppresses the follow, not the picture: the video still
+    // loads and holds its first frame, it just stops chasing the cursor.
+    const reducedMotion =
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+    const stage = video.closest('.hero-dog');
+
     let requested = false;
-    let lastTime = -1;
+    let scrubbable = false;
+    let onScreen = true;
+    let target = 0;
+    let current = 0;
+    let lastApplied = -1;
+    let frame: number | null = null;
 
-    const seek = () => {
-      seekFrame = null;
-      if (!videoReady || !Number.isFinite(video.duration) || video.duration <= 0) return;
-      const nextTime = Math.max(0, Math.min(video.duration - 0.001, targetTime));
-      if (Math.abs(nextTime - lastTime) < 0.003) return;
-      lastTime = nextTime;
-      video.currentTime = nextTime;
-    };
+    // ─── Fetching ──────────────────────────────────────────────────────────
 
-    const queueSeek = (time: number) => {
-      targetTime = time;
-      if (seekFrame === null) seekFrame = requestAnimationFrame(seek);
-    };
-
-    const onLoadedMetadata = () => {
-      videoReady = Number.isFinite(video.duration) && video.duration > 0;
-      if (videoReady) {
-        video.currentTime = 0;
-        lastTime = 0;
-      }
-    };
-    const onError = () => {
-      videoReady = false;
-    };
-    video.addEventListener('loadedmetadata', onLoadedMetadata);
-    video.addEventListener('error', onError);
-
-    // preload="none" keeps the app's heaviest asset out of the critical path,
-    // but on its own it also leaves an empty frame for anyone who never moves
-    // the cursor. So the fetch is deferred, not abandoned: once the page has
-    // finished loading and the main thread is idle, pull it in anyway.
     const request = () => {
       if (requested) return;
       requested = true;
-      // `preload` must be raised BEFORE load(), and this is the whole reason
-      // the dog never appeared.
-      //
-      // The element ships with preload="none" so the app's heaviest asset
-      // stays out of the critical path. But preload is not only a hint about
-      // WHEN to fetch — load() runs the resource selection algorithm, and
-      // that algorithm consults preload and is entitled to stop before
-      // fetching anything. Chrome does exactly that: the element sat at
-      // readyState 0 / networkState 2 indefinitely, with no request for
-      // hero-dog.mp4 ever appearing in resource timing, while the file itself
-      // served fine (200, 4,300,623 bytes; an in-page range fetch returned
-      // 206).
-      //
-      // Raising preload here is the documented way to say "defer, then
-      // commit": the markup still prevents the fetch during first paint, and
-      // this is the moment we actually want the bytes.
+      // `preload` must be raised BEFORE load(). The element ships with
+      // preload="none" to stay out of the critical path, but load() runs the
+      // resource selection algorithm, that algorithm consults preload, and
+      // Chrome is entitled to stop before fetching anything — which is
+      // exactly what it did, leaving the box empty forever.
       video.preload = 'auto';
       video.load();
     };
+
     const whenIdle = () => {
       // Not `'requestIdleCallback' in window` — that narrows `window` itself
       // to never in the else branch. Safari still lacks it.
@@ -116,23 +136,115 @@ function useHeroDogScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
     if (document.readyState === 'complete') whenIdle();
     else window.addEventListener('load', whenIdle, { once: true });
 
-    const onMouseMove = (e: MouseEvent) => {
-      // Fast path: a cursor moved, so the scrub is about to be used — fetch
-      // now rather than waiting on the idle callback above.
-      request();
-      if (!videoReady || !Number.isFinite(video.duration) || video.duration <= 0) return;
-      const progress = Math.max(0, Math.min(1, e.clientX / Math.max(1, window.innerWidth)));
-      queueSeek(progress * HORIZONTAL_PAN_END_TIME);
+    // ─── Readiness ─────────────────────────────────────────────────────────
+
+    const onLoadedMetadata = () => {
+      if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+      video.currentTime = 0;
+      current = 0;
+      lastApplied = 0;
     };
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
+
+    // canplaythrough, not loadedmetadata: seeking into a range that has not
+    // arrived yet is the other half of the stutter. Until the browser says it
+    // can play the whole thing without stalling, the dog holds its first
+    // frame rather than lurching.
+    const onReady = () => {
+      scrubbable = true;
+      stage?.setAttribute('data-scrub', 'ready');
+    };
+
+    const onError = () => {
+      scrubbable = false;
+      stage?.setAttribute('data-scrub', 'failed');
+    };
+
+    video.addEventListener('loadedmetadata', onLoadedMetadata);
+    video.addEventListener('canplaythrough', onReady);
+    video.addEventListener('error', onError);
+
+    // ─── The eased follow ──────────────────────────────────────────────────
+
+    const step = () => {
+      frame = null;
+      if (!scrubbable) return;
+
+      const delta = target - current;
+      const settled = Math.abs(delta) < SETTLE;
+      current = settled ? target : current + delta * EASE;
+
+      // A seek is already in flight. Do NOT start another — that is the
+      // cancellation that made this stutter — but keep the loop alive so the
+      // follow resumes the moment the decoder catches up.
+      if (!video.seeking && Math.abs(current - lastApplied) >= MIN_STEP) {
+        lastApplied = current;
+        video.currentTime = current;
+      }
+
+      if (!settled || video.seeking) frame = requestAnimationFrame(step);
+    };
+
+    const kick = () => {
+      if (frame === null) frame = requestAnimationFrame(step);
+    };
+
+    // ─── Input ─────────────────────────────────────────────────────────────
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!onScreen) return;
+      request();
+
+      const rect = hero.getBoundingClientRect();
+      if (rect.width <= 0) return;
+
+      const progress = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      target = progress * HORIZONTAL_PAN_END_TIME;
+
+      // Only 'active' — never 'ready'. `ready` is set by canplaythrough and
+      // by nothing else, because it is what makes the hint visible. Setting
+      // it from here would put "Move your cursor" back on top of a video
+      // that cannot respond, which is the exact thing this phase set out to
+      // stop.
+      if (scrubbable) stage?.setAttribute('data-scrub', 'active');
+      if (!reducedMotion) kick();
+    };
+
+    hero.addEventListener('pointermove', onPointerMove, { passive: true });
+
+    // ─── Visibility ────────────────────────────────────────────────────────
+    //
+    // Absent in jsdom, and a missing observer is not a reason to throw during
+    // render — the same trap matchMedia set above. Without it the pointer
+    // handler simply runs whenever the cursor is over the hero, which is
+    // already correct; the observer is an optimisation, not the mechanism.
+
+    let observer: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver === 'function') {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry === undefined) return;
+          onScreen = entry.isIntersecting;
+          if (!onScreen && frame !== null) {
+            cancelAnimationFrame(frame);
+            frame = null;
+          }
+        },
+        { threshold: 0 },
+      );
+      observer.observe(hero);
+    }
 
     return () => {
       video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      video.removeEventListener('canplaythrough', onReady);
       video.removeEventListener('error', onError);
-      window.removeEventListener('mousemove', onMouseMove);
-      if (seekFrame !== null) cancelAnimationFrame(seekFrame);
+      hero.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('load', whenIdle);
+      observer?.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [videoRef]);
+  }, [videoRef, heroRef]);
 }
 
 /**
@@ -152,11 +264,14 @@ const STEPS: { label: string; detail: string }[] = [
 
 export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  useHeroDogScrub(videoRef);
+  // The hero SECTION is the tracking region, not the viewport and not the
+  // video box — see the note on useHeroDogScrub.
+  const heroRef = useRef<HTMLElement>(null);
+  useHeroDogScrub(videoRef, heroRef);
 
   return (
     <>
-      <header className="hero">
+      <header className="hero" ref={heroRef}>
         <div className="hero-inner">
           <div className="hero-copy-block">
             <span className="eyebrow">For animal shelters</span>
@@ -183,7 +298,7 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
             <video ref={videoRef} muted playsInline preload="none" tabIndex={-1} aria-hidden="true">
               <source src="/hero-dog.mp4" type="video/mp4" />
             </video>
-            <div className="hero-dog-label">Move your cursor · guide the dog</div>
+            <div className="hero-dog-label">Move your cursor</div>
           </div>
         </div>
       </header>

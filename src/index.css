@@ -1807,6 +1807,36 @@ main.page > .section-band {
   backdrop-filter: blur(8px);
 }
 
+/* ─── Hero scrub states — polish Phase 2 ──────────────────────────────────
+   The hint used to be permanent, which meant that while the video was
+   failing to load it sat on an empty rectangle telling visitors to interact
+   with something that could not respond. It is now driven by `data-scrub`,
+   which the scrub hook sets from the video's own readiness:
+
+     (no attribute)  still loading, or never will       hint hidden
+     ready           canplaythrough — the scrub works   hint shown
+     active          the cursor has moved over the hero hint fades out
+     failed          the element errored                hint hidden
+
+   So the instruction can only appear when following it actually does
+   something, and it retires once it has been followed. */
+.hero-dog-label {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+
+.hero-dog[data-scrub='ready'] .hero-dog-label {
+  opacity: 1;
+  transform: none;
+}
+
+.hero-dog[data-scrub='active'] .hero-dog-label {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
 .primary,
 .secondary {
   padding: 14px 24px;

@@ -447,6 +447,36 @@ Closes: §2.3.
 Done when: the scrub tracks smoothly, does nothing when the hero is off
 screen, and degrades to a still image rather than a hole.
 
+## BLOCKED — needs a machine with ffmpeg
+
+Two items above cannot be done from this environment and are **not** closed:
+
+- **The poster frame.** Extracting frame 0 needs ffmpeg, or a browser that
+  will decode the video — and media elements do not load at all in an
+  automated browser session.
+- **Re-encoding with dense keyframes + faststart.** Same tool, same reason.
+
+What shipped instead is the *behavioural* half of "never an empty rectangle
+advertising a broken feature": the hint is now gated on the video's own
+`canplaythrough`, so it cannot appear over a video that is not ready. That
+removes the false advertising, but the box is still a flat warm panel until
+the first frame decodes, and scrub smoothness still depends on the current
+encode.
+
+Whoever has ffmpeg should finish both:
+
+```bash
+# Poster: first frame, sized for the 370px box at 2x.
+ffmpeg -i public/hero-dog.mp4 -vframes 1 -vf scale=740:-1 public/hero-dog-poster.jpg
+
+# Re-encode: every frame a keyframe (-g 1) so seeking never has to decode
+# forward from a distant keyframe, and faststart so the moov atom is at the
+# front. Check the result is not larger than the 4.2MB original.
+ffmpeg -i public/hero-dog.mp4 -c:v libx264 -g 1 -crf 26 -an   -movflags +faststart public/hero-dog-fast.mp4
+```
+
+Then add `poster="/hero-dog-poster.jpg"` to the `<video>` in `HomePage.tsx`.
+
 ---
 
 # PHASE 3 — LIGHT DEFAULT, WITH A THEME TOGGLE
