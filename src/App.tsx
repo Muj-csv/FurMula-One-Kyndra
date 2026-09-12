@@ -23,7 +23,7 @@ import { ASSUMPTION_CONSERVATIVE, compare, type Animal, type Applicant, type Coh
 import { COHORT, provenanceLabel } from './data/cohort';
 import { COHORT_SIZING_NOTE } from './data/researchConstants';
 import { IconSprite } from './components/IconSprite';
-import { NavBar, type Page } from './components/NavBar';
+import { NavBar, type Page, type Theme } from './components/NavBar';
 import { Footer } from './components/Footer';
 import { HomePage } from './components/HomePage';
 import { CohortPage } from './components/CohortPage';
@@ -32,6 +32,24 @@ import { EvidencePage } from './components/EvidencePage';
 import './index.css';
 
 const EMPTY_COHORT: Cohort = { animals: [], applicants: [] };
+
+/** Where the remembered theme lives. Must match the bootstrap in index.html. */
+const THEME_KEY = 'kyndra-theme';
+
+/**
+ * The theme the page is ALREADY showing.
+ *
+ * Read back off the document rather than re-derived from storage: the inline
+ * bootstrap in index.html has already applied it before first paint, and two
+ * pieces of code deciding the same thing independently is how they end up
+ * disagreeing. This one just asks what happened.
+ */
+function currentTheme(): Theme {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+
+/** The page ground for each theme, mirrored into the browser chrome. */
+const THEME_COLOR: Record<Theme, string> = { light: '#f8f3e8', dark: '#2a2118' };
 
 function pageFromHash(): Page {
   const hash = window.location.hash.replace('#', '');
@@ -61,6 +79,20 @@ export function App() {
   // is "slide the dial, Bruno matches", and Bruno is only unmatched below 0.30.
   const [equityWeight, setEquityWeight] = useState(0);
   const [assumptionLevel, setAssumptionLevel] = useState(ASSUMPTION_CONSERVATIVE);
+
+  const [theme, setTheme] = useState<Theme>(currentTheme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[theme]);
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // Private mode, or site data blocked. The theme still applies for this
+      // visit; it just will not be remembered for the next one. Not a reason
+      // to break the page.
+    }
+  }, [theme]);
 
   const outcome = useMemo(
     () => (hasRun ? compare(matchCohort, { equityWeight, assumptionLevel }) : null),
@@ -159,7 +191,12 @@ export function App() {
   return (
     <>
       <IconSprite />
-      <NavBar page={page} onNavigate={navigate} />
+      <NavBar
+        page={page}
+        onNavigate={navigate}
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
+      />
 
       {/* Redesign Phase 3, §22: the same disclosure, made scannable. It was
           a justified full-width paragraph that read as boilerplate and got

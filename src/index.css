@@ -170,36 +170,49 @@
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
 
-  color-scheme: light dark;
+  /* Light is the product's default, not the operating system's preference —
+     see the note on the dark block below. `light` rather than `light dark`
+     so native controls, scrollbars and form fields follow the theme the page
+     has actually chosen. */
+  color-scheme: light;
   font-family: var(--font-body);
   font-size: 18px;
   line-height: var(--leading-body);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #f5ede0;
-    --ink-soft: #bcab95;
-    --paper: #2a2118;
-    --paper-warm: #3a2e1d;
-    --surface: #342a1f;
-    --line: #4a3d2d;
+/* ─── DARK IS A CHOICE, NOT A DETECTION ───────────────────────────────────
+   This was `@media (prefers-color-scheme: dark)`, which meant the operating
+   system decided and the visitor could not: anyone on a dark OS got dark
+   with no way back, and light — the direction the whole palette was designed
+   for — was never what an untouched first visit looked like.
 
-    /* TEXT colours brighten; the white-bearing fills above do not. */
-    --terracotta-on-tint: #e0925c;
-    --terracotta-tint: #3e2a1c;
-    --olive-tint: #2f2f1e;
-    --sunset-tint: #3a2e1d;
-    --verified-readable: #7fb98d;
-    --verified-tint: #1f2e22;
-    --danger-readable: #e5836a;
-    --danger-tint: #3a211d;
-    --eliminated-tint: #2e271f;
+   Now the attribute decides. `data-theme` is written by the bootstrap script
+   in index.html BEFORE first paint, from localStorage, defaulting to light.
+   Nothing here consults the OS, deliberately: light is the default. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
 
-    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-card: 0 10px 22px -12px rgba(0, 0, 0, 0.55);
-    --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.6);
-  }
+  --ink: #f5ede0;
+  --ink-soft: #bcab95;
+  --paper: #2a2118;
+  --paper-warm: #3a2e1d;
+  --surface: #342a1f;
+  --line: #4a3d2d;
+
+  /* TEXT colours brighten; the white-bearing fills above do not. */
+  --terracotta-on-tint: #e0925c;
+  --terracotta-tint: #3e2a1c;
+  --olive-tint: #2f2f1e;
+  --sunset-tint: #3a2e1d;
+  --verified-readable: #7fb98d;
+  --verified-tint: #1f2e22;
+  --danger-readable: #e5836a;
+  --danger-tint: #3a211d;
+  --eliminated-tint: #2e271f;
+
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 10px 22px -12px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.6);
 }
 
 * {
@@ -1624,6 +1637,53 @@ p {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+/* ─── Theme toggle — polish Phase 3 ───────────────────────────────────────
+   Quiet by default. It is a preference control, not an action: it must be
+   findable without competing with the page's actual primary button. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 7px var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.theme-toggle__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Pressed is a real state, so it gets a real visual difference rather than
+   relying on the icon swap alone. */
+.theme-toggle[aria-pressed='true'] {
+  background: var(--terracotta-tint);
+  border-color: var(--terracotta);
+  color: var(--terracotta-on-tint);
+}
+
+/* Below the nav's wrap point the label would push the links onto a third
+   row; the icon plus its accessible name carry it from there. */
+@media (max-width: 900px) {
+  .theme-toggle {
+    padding: 7px;
+    gap: 0;
+    font-size: 0;
+  }
 }
 
 .quiz-link {

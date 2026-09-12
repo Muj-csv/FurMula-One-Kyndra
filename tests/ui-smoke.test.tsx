@@ -33,6 +33,9 @@ import { runMatch } from '../src/engine';
 afterEach(() => {
   cleanup();
   window.location.hash = '';
+  // The theme is document-level state, so it outlives an unmounted tree.
+  document.documentElement.removeAttribute('data-theme');
+  localStorage.clear();
 });
 
 /** Mount the app on a given page, the same way a visitor arrives at a URL. */
@@ -103,6 +106,41 @@ describe('the demo path a judge actually walks', () => {
       expect(animal).toBeDefined();
       expect(within(placements).getAllByText(new RegExp(animal!.name)).length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('theme', () => {
+  // The brief's requirement is blunt: light is the default and the operating
+  // system does not get a vote. Before this, the only dark-mode mechanism was
+  // `@media (prefers-color-scheme: dark)` — so a visitor on a dark OS got
+  // dark with no way back, and light was never what a first visit looked
+  // like.
+  const toggle = () => screen.getByRole('button', { name: /dark mode/i });
+
+  it('is light on a first visit, with nothing remembered', () => {
+    renderAt('');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(toggle().getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('switches to dark and remembers the choice', () => {
+    renderAt('');
+    fireEvent.click(toggle());
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(toggle().getAttribute('aria-pressed')).toBe('true');
+    // Remembered, so the bootstrap in index.html can apply it before the next
+    // first paint rather than flashing light and repainting.
+    expect(localStorage.getItem('kyndra-theme')).toBe('dark');
+  });
+
+  it('adopts the theme the pre-paint bootstrap already applied', () => {
+    // What index.html does before React exists. App must READ this, not
+    // re-derive it — two pieces of code deciding the same thing independently
+    // is how they end up disagreeing.
+    document.documentElement.setAttribute('data-theme', 'dark');
+    renderAt('');
+    expect(toggle().getAttribute('aria-pressed')).toBe('true');
   });
 });
 
