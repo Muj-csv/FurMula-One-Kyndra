@@ -3019,3 +3019,41 @@ main.page > .section-band {
   max-width: var(--measure-tight);
 }
 
+/* ═══ PHASE 8 VERIFICATION FIXES ══════════════════════════════════════════
+   Two things the responsive pass caught at a real 390px viewport. Both were
+   invisible until now because resizing the browser window in an automated
+   session does not change the viewport — only proper device emulation does,
+   which is what finally made these measurable. */
+
+/* 1. The equity dial's right-hand label was CUT OFF on a phone.
+      .dial__row is flex with the default nowrap, so at 390px "Favour
+      long-stay" ran to x=410 — twenty pixels past the viewport — and because
+      the page clips rather than scrolls horizontally (by design), the label
+      was not merely off-screen, it was unreachable. On the demo's hero
+      control.
+
+      Wrapping puts the two ends on one line with the slider full-width
+      beneath them, which also gives the slider a much larger touch target. */
+@media (max-width: 34rem) {
+  .dial__row {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .dial__slider {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
+/* 2. The sticky nav was 155px tall on an 844px phone — 18% of the screen,
+      permanently. The cause was "Cohort Demo" wrapping onto two lines, which
+      doubled the height of the links row. The row is already a horizontal
+      scroller at this width, so keeping each label on one line costs nothing
+      and returns roughly 50px of viewport on every page. */
+@media (max-width: 900px) {
+  .nav-link {
+    white-space: nowrap;
+  }
+}
+
