@@ -106,6 +106,44 @@ describe('the demo path a judge actually walks', () => {
   });
 });
 
+describe('the hero scrub on a browser that is missing things', () => {
+  // jsdom has no matchMedia, so the scrub hook returns before it reaches
+  // anything else — which means its platform guards are never exercised by
+  // the other tests in this file. This test pretends to be a fine-pointer
+  // browser so the rest of the hook actually runs.
+  //
+  // It exists because this exact class of bug has now bitten twice: an
+  // unguarded window.matchMedia call threw during render in Phase 3, and the
+  // same shape of mistake was available again with IntersectionObserver.
+  it('renders where IntersectionObserver does not exist', () => {
+    const realMatchMedia = window.matchMedia;
+    const realObserver = window.IntersectionObserver;
+
+    // A desktop browser: fine pointer, no reduced-motion preference.
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: (query: string) => ({
+        matches: query.includes('pointer: fine'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }),
+    });
+    // …but an old one, with no IntersectionObserver.
+    // @ts-expect-error deliberately removing a platform API for this test
+    delete window.IntersectionObserver;
+
+    try {
+      expect(() => renderAt('')).not.toThrow();
+      expect(document.querySelector('.hero-dog')).toBeTruthy();
+    } finally {
+      window.matchMedia = realMatchMedia;
+      window.IntersectionObserver = realObserver;
+    }
+  });
+});
+
 describe('household intake', () => {
   it('never lets a cleared size field become a 0kg limit', () => {
     // Number('') is 0, and maxSizeKg 0 fails the size constraint for EVERY
