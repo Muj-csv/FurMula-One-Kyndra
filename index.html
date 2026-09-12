@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1b3a2f" />
+    <!-- Matches the light page ground. Updated at runtime when the theme is
+         toggled — see App.tsx. It was #1b3a2f, a dark green left over from
+         before the Terracotta/Olive palette, so the browser chrome on mobile
+         did not match any colour on the page. -->
+    <meta name="theme-color" content="#f8f3e8" />
     <meta
       name="description"
       content="Kyndra — where the right homes meet the right animals. Transparent, explainable adoption matching for shelters."
@@ -12,6 +16,33 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <title>Kyndra — Where the right homes meet the right animals</title>
+
+    <!-- Theme bootstrap. Must run here, and must not be a module.
+         ==================================================================
+         The theme lives on a `data-theme` attribute (src/index.css), and the
+         choice is remembered in localStorage. If React applied it, the first
+         paint would use the default palette and then repaint — a white flash
+         on every single load for anyone who has chosen dark. A module script
+         is deferred by definition, so it would flash too.
+
+         So: inline, synchronous, before the body exists. It is the only
+         script in this document for exactly that reason.
+
+         LIGHT IS THE DEFAULT. Nothing here reads prefers-color-scheme;
+         absent a stored choice, the answer is light. -->
+    <script>
+      (function () {
+        var theme = 'light';
+        try {
+          if (localStorage.getItem('kyndra-theme') === 'dark') theme = 'dark';
+        } catch (e) {
+          /* Storage can throw outright in private mode or when site data is
+             blocked. A remembered preference is a convenience; failing to
+             read one must never stop the page rendering. */
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -57,6 +57,9 @@ const BRIEF = {
 // block bounds come from brace matching rather than from a newline literal.
 // Brace matching does not care what a line ends with.
 
+/** The selector that carries the dark palette. */
+const DARK_SELECTOR = ":root[data-theme='dark']";
+
 /** The stylesheet with every comment removed, and newlines normalised. */
 function sanitise(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\r\n/g, '\n');
@@ -104,13 +107,16 @@ function blockBody(source: string, from: number): string {
 function parse(source: string): { light: Map<string, string>; dark: Map<string, string> } {
   const css = sanitise(source);
 
-  const light = declarations(blockBody(css, css.indexOf(':root')));
+  // `:root {` with the brace, not bare `:root` — the dark layer's selector
+  // starts with `:root` too, and matching the wrong one would silently
+  // measure dark twice.
+  const light = declarations(blockBody(css, css.indexOf(':root {')));
 
-  // NOTE: when the theme moves off the media query and onto a `data-theme`
-  // attribute, this selector is what changes — see the polish brief, Phase 3.
-  const overrides = declarations(
-    blockBody(css, css.indexOf('@media (prefers-color-scheme: dark)')),
-  );
+  // Dark is an opt-in attribute, not a media query: the OS no longer decides
+  // (polish brief, Phase 3). If this selector is ever not found, indexOf
+  // returns -1, blockBody finds the first brace in the file, and the guards
+  // in "the parser itself" catch it.
+  const overrides = declarations(blockBody(css, css.indexOf(DARK_SELECTOR)));
 
   const dark = new Map(light);
   for (const [name, value] of overrides) dark.set(name, value);
