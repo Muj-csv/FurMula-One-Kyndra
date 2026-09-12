@@ -27,6 +27,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { cleanup, render, screen, fireEvent, within } from '@testing-library/react';
 import { App } from '../src/App';
 import { ApplicantIntake } from '../src/components/ApplicantIntake';
+import type { Applicant } from '../src/engine';
 import { COHORT } from '../src/data/cohort';
 import { runMatch } from '../src/engine';
 
@@ -202,12 +203,19 @@ describe('theme', () => {
   // `@media (prefers-color-scheme: dark)` — so a visitor on a dark OS got
   // dark with no way back, and light was never what a first visit looked
   // like.
-  const toggle = () => screen.getByRole('button', { name: /dark mode/i });
+  // The control names the ACTION now, not the setting — its accessible name
+  // is "Switch to dark" / "Switch to light" and there is no aria-pressed.
+  // These tests moved with it rather than being relaxed: the old ones asserted
+  // aria-pressed, which no longer exists, so they now assert the two things
+  // that actually matter — the theme the document is showing, and the fact
+  // that the button's own label tells you where it will take you.
+  const toggle = () => screen.getByRole('button', { name: /switch to (dark|light)/i });
 
   it('is light on a first visit, with nothing remembered', () => {
     renderAt('');
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    expect(toggle().getAttribute('aria-pressed')).toBe('false');
+    // In light mode the only sensible offer is dark.
+    expect(toggle().textContent).toMatch(/switch to dark/i);
   });
 
   it('switches to dark and remembers the choice', () => {
@@ -215,7 +223,9 @@ describe('theme', () => {
     fireEvent.click(toggle());
 
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    expect(toggle().getAttribute('aria-pressed')).toBe('true');
+    // And the offer flips, so the label never contradicts the theme — the
+    // exact fault this replaced, where a sun sat beside the words "Dark mode".
+    expect(toggle().textContent).toMatch(/switch to light/i);
     // Remembered, so the bootstrap in index.html can apply it before the next
     // first paint rather than flashing light and repainting.
     expect(localStorage.getItem('kyndra-theme')).toBe('dark');
@@ -227,7 +237,7 @@ describe('theme', () => {
     // is how they end up disagreeing.
     document.documentElement.setAttribute('data-theme', 'dark');
     renderAt('');
-    expect(toggle().getAttribute('aria-pressed')).toBe('true');
+    expect(toggle().textContent).toMatch(/switch to light/i);
   });
 });
 
@@ -305,20 +315,62 @@ describe('the hero dog loop', () => {
 });
 
 describe('household intake', () => {
-  it('never lets a cleared size field become a 0kg limit', () => {
-    // Number('') is 0, and maxSizeKg 0 fails the size constraint for EVERY
-    // animal in the cohort — so a visitor who cleared the field to retype it
-    // got "no matches" with nothing on screen explaining why. The min/max
-    // attributes do not prevent this: they gate submission, not the value
-    // React stores as you type.
-    render(<ApplicantIntake animals={COHORT.animals} nextId="p99" onSubmit={() => {}} />);
+  // This test asserts on what the ENGINE receives, not on what the input box
+  // displays — and that distinction is the whole point.
+  //
+  // It used to check `size.value` directly, which pinned the wrong thing. A
+  // 0kg limit is a real bug: it fails the size constraint for every animal in
+  // the cohort and presents as "no matches" with nothing on screen to explain
+  // why. But the guard against it was clamping on every keystroke, which made
+  // the field impossible to clear — React wrote the clamped number straight
+  // back into the box, and anything typed next landed beside it. That is the
+  // "0200" fault.
+  //
+  // The invariant was never "the box is non-empty". It was "the submitted
+  // household carries a usable limit". Testing the box instead of the
+  // submission is what made the display bug unfixable without a red suite.
+  it('never submits a 0kg size limit, however the field was edited', () => {
+    const submitted: Applicant[] = [];
+    render(
+      <ApplicantIntake
+        animals={COHORT.animals}
+        nextId="p99"
+        onSubmit={(applicant) => submitted.push(applicant)}
+      />,
+    );
 
     const size = screen.getByLabelText(/largest animal/i) as HTMLInputElement;
-    fireEvent.change(size, { target: { value: '' } });
-    expect(Number(size.value)).toBeGreaterThan(0);
 
-    // And the stated ceiling holds from the other end too.
+    // Clear it — which a visitor does constantly, to retype.
+    fireEvent.change(size, { target: { value: '' } });
+    // The box is allowed to be empty now. That is the fix, not a regression.
+    expect(size.value).toBe('');
+
+    fireEvent.submit(size.closest('form')!);
+    expect(submitted).toHaveLength(1);
+    expect(submitted[0]!.maxSizeKg).toBeGreaterThan(0);
+
+    // And the stated ceiling still holds from the other end — but it is
+    // enforced on the MODEL, not on the keystroke. While you are typing, the
+    // box shows what you typed; that is what makes the field editable at all.
+    // Blur is where the draft is reconciled with the clamped value.
     fireEvent.change(size, { target: { value: '999' } });
+    fireEvent.blur(size);
     expect(Number(size.value)).toBeLessThanOrEqual(70);
+    // Not re-submitted here on purpose: ApplicantIntake locks the button after
+    // a submit until `nextId` changes, which is its guard against two
+    // applicants sharing an id. A fixed test prop never changes, so a second
+    // submit is correctly refused.
+  });
+
+  it('lets a cleared field be retyped without a leading zero', () => {
+    render(<ApplicantIntake animals={COHORT.animals} nextId="p99" onSubmit={() => {}} />);
+    const hours = screen.getByLabelText(/how long is the home usually empty/i) as HTMLInputElement;
+
+    fireEvent.change(hours, { target: { value: '' } });
+    fireEvent.change(hours, { target: { value: '6' } });
+
+    // Not "06" — the symptom the screenshot caught on the animal form.
+    expect(hours.value).toBe('6');
   });
 });

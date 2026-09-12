@@ -95,16 +95,26 @@ export function MatchPage({
         <div className="section-head">
           <div>
             <h2>Matching</h2>
-            <p>
-              Step 1: add animals. Step 2: add households. Step 3: review the cohort. Step 4: run
-              the matching engine. Step 5: review the results.
-            </p>
+            {/* The five-step paragraph that used to sit here is gone — see the
+                note on the stage strip below. */}
           </div>
         </div>
 
         {/* Phase 3.5 — a simple stage indicator, not an animation. Filter and
             Derive light up once there is a cohort to run; Match and Results
-            light up once the engine has actually run. */}
+            light up once the engine has actually run.
+            ──────────────────────────────────────────────────────────────
+            Punch list item 3: this page carried THREE step systems between
+            the heading and any content — a five-step paragraph about the
+            interface, this four-stage strip about the engine's pipeline,
+            and a second four-step paragraph about the interface again. They
+            did not agree with each other, and two of the three were
+            numbered sequences written as run-on prose.
+
+            This one survives because it is the only one that reflects live
+            state: it lights up as the cohort fills and the engine runs. The
+            two paragraphs told visitors to press buttons that already say
+            what they do, which is instruction for its own sake. */}
         <ol className="stage-flow" aria-label="Matching process stage">
           <li className={hasAnimals || outcome !== null ? 'active' : ''}>01 Filter</li>
           <li className={hasAnimals || outcome !== null ? 'active' : ''}>02 Derive</li>
@@ -151,10 +161,6 @@ export function MatchPage({
 
         <div className="demo-layout" style={{ display: 'grid', gap: '22px', marginTop: '28px' }}>
           <div className="intake-card" style={{ padding: 0 }}>
-            <p className="results__note" style={{ marginBottom: '10px' }}>
-              Step 1 &amp; 2 — add animals and households. Step 3 — the counts below are your
-              cohort. Step 4 — run the engine.
-            </p>
             <div className="actions" style={{ marginTop: 0 }}>
               <button type="button" className="primary" data-testid="run-match" onClick={handleRun}>
                 Run the matching engine →
@@ -170,10 +176,17 @@ export function MatchPage({
               </button>
             </div>
 
-            <p className="results__note" style={{ marginTop: '12px' }}>
-              {cohort.animals.length} animals · {cohort.applicants.length} households ·{' '}
-              {cohort.animals.length * cohort.applicants.length} pairwise judgements to make by
-              hand
+            {/* Punch list item 4. This floated between the buttons and the
+                results in body-sized text with nothing to attach to. It is a
+                caption on the action row above it, so it is set as one — and
+                the three figures are marked up as figures, because the last
+                of them is the argument for the whole product and it is
+                derived, not asserted. */}
+            <p className="cohort-count">
+              <strong>{cohort.animals.length}</strong> animals ·{' '}
+              <strong>{cohort.applicants.length}</strong> households ·{' '}
+              <strong>{cohort.animals.length * cohort.applicants.length}</strong> pairwise
+              judgements to make by hand
             </p>
 
             {showAnimalIntake ? <AnimalIntake nextId={nextAnimalId} onSubmit={onAddAnimal} /> : null}

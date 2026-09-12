@@ -1856,13 +1856,9 @@ p {
   flex-shrink: 0;
 }
 
-/* Pressed is a real state, so it gets a real visual difference rather than
-   relying on the icon swap alone. */
-.theme-toggle[aria-pressed='true'] {
-  background: var(--terracotta-tint);
-  border-color: var(--terracotta);
-  color: var(--terracotta-on-tint);
-}
+/* The button no longer carries aria-pressed — it names an action rather than
+   a two-state setting (see NavBar.tsx) — so there is no pressed state to
+   style. It is a quiet control in both themes. */
 
 /* Below the nav's wrap point the label would push the links onto a third
    row; the icon plus its accessible name carry it from there. */
@@ -3015,5 +3011,130 @@ main.page > .section-band {
   .nav-link {
     white-space: nowrap;
   }
+}
+
+/* ═══ PUNCH-LIST FIXES ════════════════════════════════════════════════════
+   Kyndra_UI_Fixes_Prompt.md. Appended as one labelled block rather than
+   edited into rules across the file (§0.1, merge conflicts). */
+
+/* Item 8 — stacked explanations ran together.
+   .results__note sets no margin and the global reset zeroes `p`, so two
+   consecutive notes touched with no gap at all and read as one
+   undifferentiated block — visible in the regret panel, where two separate
+   explanations looked like one. An adjacent-sibling rule rather than a plain
+   margin-top, so a note that stands alone is unaffected. */
+.results__note + .results__note,
+.results__note + .dial__guardrail,
+.dial__guardrail + .results__note {
+  margin-top: var(--space-4);
+}
+
+/* Item 7 — text ran into the next section's boundary.
+   The last line of "What is Kyndra?" ended a few pixels above the tinted
+   band's top border. The band has generous padding of its own; the section
+   BEFORE it had no bottom spacing, and the stylesheet had no general section
+   rhythm at all — every section had been spaced by hand, and this one was
+   missed.
+
+   A single rule rather than a patch on #what, so the same crowding cannot
+   reappear at the next boundary someone adds. Sections that already set
+   their own margin keep it: this only sets a floor. */
+main.page > section {
+  padding-bottom: var(--space-8);
+}
+
+/* The band paints a background, so its own padding already does this job —
+   adding more would push its content away from a border that is meant to
+   contain it. */
+main.page > section.section-band {
+  padding-bottom: 64px;
+}
+
+/* Item 5 — the process-flow arrows.
+   They were text glyphs pinned to `top: 14px`, which aligned them with the
+   step NUMBERS rather than the gap between cards, at a size and colour
+   (--text-sm, --ink-faint) that read as debris rather than direction. They
+   are the only thing telling the eye these five cards are a sequence. */
+.process-flow__step:not(:last-child)::after {
+  top: 50%;
+  transform: translateY(-50%);
+  right: -22px;
+  color: var(--terracotta);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-normal);
+  line-height: 1;
+}
+
+/* Item 6 — the mark beside a section heading.
+   Sized in `em` so it tracks the heading's own type rather than pinning a
+   pixel value that drifts if the scale moves. */
+.section-head h2 .heading-mark {
+  width: 0.82em;
+  height: 0.82em;
+  margin-right: 0.34em;
+  vertical-align: -0.06em;
+  color: var(--terracotta);
+  flex-shrink: 0;
+}
+
+/* Item 4 — the cohort count line had nothing to belong to.
+   It floated between the action row and the results in body-sized muted
+   text. It is a caption on the actions above it, so it is set as one. */
+.cohort-count {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.cohort-count strong {
+  color: var(--ink);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Item 9 — the dial's proof, behind the guarantee rather than beside it.
+   Borrows the summary marker the placement cards already use, so the app
+   still has exactly one disclosure idiom. */
+.dial__proof {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+.dial__proof summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: var(--weight-semibold);
+  list-style: none;
+}
+
+.dial__proof summary::-webkit-details-marker {
+  display: none;
+}
+
+.dial__proof summary::before {
+  content: '+';
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--terracotta);
+  color: var(--terracotta-on-tint);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+
+.dial__proof[open] summary::before {
+  content: '−';
+}
+
+.dial__proof p {
+  margin-top: var(--space-2);
 }
 

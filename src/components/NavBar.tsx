@@ -26,11 +26,26 @@ export type Theme = 'light' | 'dark';
 /**
  * The theme control.
  *
- * A real <button> with a real name and a real state, not a bare icon:
- * `aria-pressed` is the ARIA pattern for a two-state toggle, so a screen
- * reader announces "Dark mode, toggle button, not pressed" rather than
- * leaving the user to infer what a crescent means. The icons are decorative
- * and marked as such.
+ * ─── WHY IT NAMES THE ACTION, NOT THE STATE ────────────────────────────────
+ *
+ * In light mode this used to show a SUN beside the words "Dark mode". The
+ * icon said "you are in light mode"; the words read as "you are in dark
+ * mode". One was naming the current state and the other was naming the
+ * setting, and nothing on screen told you which.
+ *
+ * That came from `aria-pressed`, which is the right ARIA pattern for a
+ * two-state toggle — the label is the setting's NAME and the pressed state
+ * carries on/off. It is correct for a screen reader and invisible to
+ * everyone else, who just saw a contradiction.
+ *
+ * There is a tempting fix: keep the visible text changing while pinning
+ * `aria-label="Dark mode"` so the accessible name stays stable. Do not. An
+ * aria-label that does not contain the visible label breaks WCAG 2.5.3
+ * (Label in Name) — voice-control users saying "click switch to dark" would
+ * match nothing. It trades a visible bug for an invisible one.
+ *
+ * So: a plain button whose accessible name IS the action, and an icon
+ * showing the mode that action leads to. Both halves now say the same thing.
  *
  * It sits top-right, in the space the duplicate "Try Matching" CTA used to
  * occupy — contextual control rather than a second navigation route, which
@@ -38,17 +53,14 @@ export type Theme = 'light' | 'dark';
  */
 function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
   const dark = theme === 'dark';
+  // The mode the button takes you TO — which is what both the icon and the
+  // words describe.
+  const label = dark ? 'Switch to light' : 'Switch to dark';
 
   return (
-    <button
-      type="button"
-      className="theme-toggle"
-      onClick={onToggle}
-      aria-pressed={dark}
-      title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-    >
+    <button type="button" className="theme-toggle" onClick={onToggle} title={label}>
       <svg className="theme-toggle__icon" viewBox="0 0 20 20" aria-hidden="true">
-        {dark ? (
+        {!dark ? (
           <path
             d="M15.5 12.6A6.2 6.2 0 0 1 7.4 4.5a6.3 6.3 0 1 0 8.1 8.1Z"
             fill="currentColor"
@@ -63,7 +75,7 @@ function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }
           </>
         )}
       </svg>
-      Dark mode
+      {label}
     </button>
   );
 }

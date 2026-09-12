@@ -191,7 +191,16 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
           <JourneyTrack step={1} />
           <div className="section-head section-head--tight">
             <div>
-              <h2>What is Kyndra?</h2>
+              {/* Punch list item 6. Decorative and aria-hidden: the heading
+                  already says "Kyndra", so announcing the mark would repeat
+                  it. Sized in em against the heading rather than in pixels,
+                  so it holds if the type scale moves. */}
+              <h2>
+                <svg className="heading-mark" viewBox="0 0 32 32" aria-hidden="true">
+                  <use href="#kyndra-mark" />
+                </svg>
+                What is Kyndra?
+              </h2>
             </div>
           </div>
           <p className="onboarding-copy">
