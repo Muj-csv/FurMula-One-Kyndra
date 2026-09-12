@@ -1,0 +1,23 @@
+# Line endings — Kyndra_UI_Polish_Prompt.md §0.2 Rule 6.
+#
+# Until this file existed, the repository had no line-ending policy: history
+# held LF, Windows working trees held CRLF, and every save could rewrite a
+# whole file's worth of invisible characters. That is how a one-line change
+# turns into a whole-file conflict, and it had already broken a test that
+# searched the stylesheet for "\n}\n" (tests/palette.test.ts).
+#
+# LF everywhere, in the repository AND in the working tree. There are no
+# .bat/.cmd/.ps1 files in this project, so nothing here needs CRLF.
+
+* text=auto eol=lf
+
+# Binary — never touch these, and never try to diff them as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.mp4 binary
+*.woff binary
+*.woff2 binary
