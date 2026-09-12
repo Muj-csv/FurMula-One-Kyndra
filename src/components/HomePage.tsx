@@ -85,6 +85,23 @@ function useHeroDogScrub(videoRef: React.RefObject<HTMLVideoElement | null>) {
     const request = () => {
       if (requested) return;
       requested = true;
+      // `preload` must be raised BEFORE load(), and this is the whole reason
+      // the dog never appeared.
+      //
+      // The element ships with preload="none" so the app's heaviest asset
+      // stays out of the critical path. But preload is not only a hint about
+      // WHEN to fetch — load() runs the resource selection algorithm, and
+      // that algorithm consults preload and is entitled to stop before
+      // fetching anything. Chrome does exactly that: the element sat at
+      // readyState 0 / networkState 2 indefinitely, with no request for
+      // hero-dog.mp4 ever appearing in resource timing, while the file itself
+      // served fine (200, 4,300,623 bytes; an in-page range fetch returned
+      // 206).
+      //
+      // Raising preload here is the documented way to say "defer, then
+      // commit": the markup still prevents the fetch during first paint, and
+      // this is the moment we actually want the bytes.
+      video.preload = 'auto';
       video.load();
     };
     const whenIdle = () => {

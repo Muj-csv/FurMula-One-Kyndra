@@ -39,8 +39,30 @@ const BRIEF = {
 };
 
 // ─── Parsing ───────────────────────────────────────────────────────────────
+//
+// This parser was the reason four tests failed on main, and it failed for two
+// separate reasons that are both fixed below. Neither was a contrast problem;
+// the palette was fine the whole time.
+//
+//   1. IT WAS NEWLINE-SENSITIVE. It found the end of the dark-mode block with
+//      indexOf('\n}\n'). A Windows checkout has CRLF, that never matched, the
+//      slice ran to end-of-file, and the "dark" map ended up holding every
+//      declaration in the stylesheet.
+//
+//   2. IT PARSED COMMENTS AS CODE. Having over-read, it then matched `--ink:`
+//      inside the prose of a CSS comment and tried to read the sentence that
+//      followed as a colour.
+//
+// So: comments are stripped before anything else looks at the source, and
+// block bounds come from brace matching rather than from a newline literal.
+// Brace matching does not care what a line ends with.
 
-/** Pull `--name: value;` declarations out of one `:root { … }` body. */
+/** The stylesheet with every comment removed, and newlines normalised. */
+function sanitise(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\r\n/g, '\n');
+}
+
+/** Pull `--name: value;` declarations out of a block body. */
 function declarations(body: string): Map<string, string> {
   const found = new Map<string, string>();
   for (const match of body.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)) {
@@ -51,24 +73,51 @@ function declarations(body: string): Map<string, string> {
 }
 
 /**
+ * The body of the block whose header begins at `from`, by brace matching.
+ *
+ * Handles nesting, so an `@media` wrapper returns everything inside it —
+ * including the `:root` block it contains — rather than stopping at the first
+ * closing brace it happens to meet.
+ */
+function blockBody(source: string, from: number): string {
+  const open = source.indexOf('{', from);
+  expect(open, 'no block found after the given offset').toBeGreaterThan(-1);
+
+  let depth = 0;
+  for (let i = open; i < source.length; i += 1) {
+    if (source[i] === '{') depth += 1;
+    else if (source[i] === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(open + 1, i);
+    }
+  }
+
+  throw new Error('unbalanced braces in the stylesheet');
+}
+
+/**
  * The two token layers: `:root` and the dark-mode override.
  *
  * Dark inherits from light and replaces only what it redefines, exactly as the
  * cascade does — so a pair that only light defines is still measured in dark.
  */
-function themes(): { light: Map<string, string>; dark: Map<string, string> } {
-  const rootStart = CSS.indexOf(':root {');
-  const rootEnd = CSS.indexOf('\n}', rootStart);
-  const light = declarations(CSS.slice(rootStart, rootEnd));
+function parse(source: string): { light: Map<string, string>; dark: Map<string, string> } {
+  const css = sanitise(source);
 
-  const darkStart = CSS.indexOf('@media (prefers-color-scheme: dark)');
-  const darkEnd = CSS.indexOf('\n}\n', darkStart);
-  const overrides = declarations(CSS.slice(darkStart, darkEnd));
+  const light = declarations(blockBody(css, css.indexOf(':root')));
+
+  // NOTE: when the theme moves off the media query and onto a `data-theme`
+  // attribute, this selector is what changes — see the polish brief, Phase 3.
+  const overrides = declarations(
+    blockBody(css, css.indexOf('@media (prefers-color-scheme: dark)')),
+  );
 
   const dark = new Map(light);
   for (const [name, value] of overrides) dark.set(name, value);
   return { light, dark };
 }
+
+const themes = () => parse(CSS);
 
 /** Resolve `var(--x)` chains down to a literal hex. */
 function resolve(tokens: Map<string, string>, name: string, depth = 0): string {
@@ -209,5 +258,42 @@ describe('dark mode is warm, not a void', () => {
     expect(r).toBeGreaterThan(b);
     // And it is lifted off black — the previous ground was #211a13.
     expect(luminance(resolve(dark, '--paper'))).toBeGreaterThan(luminance('#211a13'));
+  });
+});
+
+describe('the parser itself', () => {
+  // Both failure modes that took this suite red on main, pinned. Neither was
+  // a contrast bug — they were bugs in the thing that MEASURES contrast, which
+  // is worse: a broken measuring tool reports success.
+  const { light, dark } = themes();
+
+  it('found a real token block, not a slice of the whole stylesheet', () => {
+    expect(light.size).toBeGreaterThan(20);
+    // Dark overrides a subset of light and adds nothing new, so the two maps
+    // hold the same keys. If dark ever grows past light, the block bounds have
+    // run away again and it is swallowing the rest of the file.
+    expect(dark.size).toBe(light.size);
+  });
+
+  it('parses a CRLF checkout identically to an LF one', () => {
+    const crlf = parse(CSS.split('\n').join('\r\n'));
+    expect(crlf.light.size).toBe(light.size);
+    expect(crlf.dark.size).toBe(dark.size);
+    expect(crlf.dark.get('--paper')).toBe(dark.get('--paper'));
+  });
+
+  it('does not read a token name written inside a comment', () => {
+    // The comment declares a token that exists NOWHERE else in the stylesheet.
+    // If the parser picks it up, it can only have come from the comment.
+    //
+    // An earlier version of this test injected `--ink:` instead, and passed
+    // even with comment-stripping disabled — because the real `--ink`
+    // declaration sits further down the same block and overwrote the bogus
+    // entry. It was testing nothing.
+    const withComment = CSS.replace(
+      ':root {',
+      ':root {\n  /* --not-a-real-token: prose, not a declaration; */',
+    );
+    expect(parse(withComment).light.has('--not-a-real-token')).toBe(false);
   });
 });
