@@ -201,13 +201,30 @@ export function App() {
       {/* Redesign Phase 3, §22: the same disclosure, made scannable. It was
           a justified full-width paragraph that read as boilerplate and got
           skipped; the badge is what a visitor actually registers, and PRD
-          §3.1 needs this seen, not merely present. Layout moved to CSS. */}
-      <p className="provenance">
-        <span className="provenance__badge">Simulated cohort</span>
-        <span>
-          {provenanceLabel(provenanceCohort)} {COHORT_SIZING_NOTE}
-        </span>
-      </p>
+          §3.1 needs this seen, not merely present. Layout moved to CSS.
+
+          Polish Phase 6, audit F10 — NOT shown on Overview.
+
+          It used to sit above the hero on every page, so the first thing a
+          judge met was a compliance notice, before they knew what the
+          product was. The fix is not to shrink it or move it down the page:
+          PRD §3.1 asks for this disclosure "wherever the cohort appears",
+          and no cohort appears on Overview. That page is presentational —
+          no animals, no households, no counts, nothing drawn from the data.
+          A disclaimer about data that is not on screen is not transparency,
+          it is noise, and noise is what gets people to stop reading the
+          notices that DO matter.
+
+          It stays exactly as prominent on Cohort Demo, Matching and About,
+          which are the three pages where cohort data is actually shown. */}
+      {page === 'home' ? null : (
+        <p className="provenance">
+          <span className="provenance__badge">Simulated cohort</span>
+          <span>
+            {provenanceLabel(provenanceCohort)} {COHORT_SIZING_NOTE}
+          </span>
+        </p>
+      )}
 
       {page === 'home' ? <HomePage onNavigate={navigate} /> : null}
       {page === 'cohort' ? (

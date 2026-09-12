@@ -13,7 +13,7 @@ export function Footer() {
         <div className="footer-brand">
           <div className="nav-logo">
             <svg className="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
-              <use href="#paw-icon-light" />
+              <use href="#kyndra-mark" />
             </svg>
             Kyndra
           </div>

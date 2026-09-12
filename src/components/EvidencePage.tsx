@@ -10,7 +10,7 @@
 // literal.
 
 import type { Cohort, GreedyResult, ImpactModel, MatchResult } from '../engine';
-import { countViolations } from '../engine';
+import { countViolations, CONSTRAINTS } from '../engine';
 import { RESEARCH, COHORT_SIZING_NOTE } from '../data/researchConstants';
 import { provenanceLabel } from '../data/cohort';
 import { baselineComparison } from '../data/humanBaseline';
@@ -57,7 +57,17 @@ export function EvidencePage({
               each one maps to a documented cause of adoption return.
             </p>
           </div>
-          <div className="proof">Verified matching rules</div>
+          {/* Was "Verified matching rules" — a trust badge the product awarded
+              itself. Verified by whom? An unattributed claim of verification
+              reads as decoration, and on a page whose entire argument is
+              transparency it slightly REDUCES credibility (audit F9).
+
+              Replaced with something checkable: the count comes from the
+              engine's own constraint list, and every one of those rules
+              carries a citation the About page prints in full. A fact the
+              reader can go and test, instead of a claim they are asked to
+              accept. */}
+          <div className="proof">{CONSTRAINTS.length} rules, each cited</div>
         </div>
 
         <div className="citation-panel">
