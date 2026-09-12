@@ -12,6 +12,40 @@
       name="description"
       content="Kyndra — where the right homes meet the right animals. Transparent, explainable adoption matching for shelters."
     />
+    <!-- Webfonts, loaded here rather than from an @import inside index.css.
+         ==================================================================
+         An @import is the slowest way to load a font: the browser must fetch
+         and parse the stylesheet, discover the @import, fetch THAT
+         stylesheet, and only then start on the font files — three
+         round-trips before a single character can render in its real face.
+         A <link> here starts the chain during HTML parse, and preconnect
+         warms the two hosts while that is happening.
+
+         Two families, on purpose: Fraunces carries headlines and large
+         numbers, Plus Jakarta Sans carries everything that is read rather
+         than scanned. One face doing every job was the single most
+         recognisable "generated site" signature on the page.
+
+         Fraunces is requested as a weight RANGE (600..700), not a single
+         instance. Pinned at 600 it looked right in a screenshot and was
+         quietly wrong: headings ask for 700, only 600 was loaded, and the
+         browser was FAUX-BOLDING the serif — synthetic thickening, which
+         smears an old-style face at display size. A variable range costs the
+         same one file and makes every weight the page asks for a real one.
+
+         The weight list is deliberately short. Plus Jakarta Sans previously
+         loaded 400/500/600/700/800 plus a 600 italic — six files, when 500
+         appeared twice in the whole stylesheet, 800 four times, and body
+         italics were being SYNTHESISED because the only italic loaded was a
+         weight nothing used. It is now 400/600/700 plus a real 400 italic,
+         and Fraunces adds one variable file. Five files, down from six. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+    />
+
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
