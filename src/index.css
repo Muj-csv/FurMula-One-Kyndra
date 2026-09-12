@@ -133,11 +133,16 @@
   --space-16: 3.556rem; /* 64px */
 
   /* ─── Radius ─────────────────────────────────────────────────────────── */
+  /* Four tiers, and every one of them is used. --radius-md and --radius-xl
+     were defined and never referenced once; an unused tier is not a spare,
+     it is an invitation for the next person to introduce a fifth size. The
+     one-off 3px/4px/14px/16px values scattered around the sheet are gone
+     too — six different corner radii on one screen is what "assembled from
+     parts" looks like (audit F5). 50% stays where a thing is genuinely a
+     circle. */
   --radius-sm: 6px;
   --radius: 10px;
-  --radius-md: var(--radius);
   --radius-lg: 18px;
-  --radius-xl: 26px;
   --radius-pill: 999px;
 
   /* ─── Elevation — selective, per brief §4. ───────────────────────────── */
@@ -473,6 +478,27 @@ p {
   overflow: hidden;
 }
 
+/* Adjacent disclosures join into one panel instead of stacking as separate
+   cards (audit F6: 40 bordered elements on a single screen). The results
+   board has two runs of two, so this turns four outlined boxes into two
+   grouped lists — fewer objects for the eye to parse, and it reads as "here
+   is a set of things you can open" rather than four unrelated cards.
+
+   Done with adjacency rather than a wrapper element: the runs are not
+   contiguous in the markup (the dial and the placements list sit between
+   them), so a wrapper would have to be added in two places and would group
+   the wrong things if the order ever changed. */
+.disclosure + .disclosure {
+  margin-top: -1px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.disclosure:has(+ .disclosure) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 .disclosure__trigger {
   display: flex;
   align-items: center;
@@ -535,7 +561,7 @@ p {
 
 .stage-flow li {
   padding: 7px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink-faint);
@@ -574,7 +600,7 @@ p {
 .demo-banner__badge {
   flex-shrink: 0;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--olive-strong);
   color: #fff;
   font-size: var(--text-xs);
@@ -688,7 +714,7 @@ p {
   font-weight: 600;
   color: var(--ink-soft);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .animal__special {
@@ -873,7 +899,7 @@ p {
   letter-spacing: 0.05em;
   color: var(--verified-readable);
   background: var(--verified-tint);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .results__arrival-lede {
@@ -997,7 +1023,7 @@ p {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--verified-readable);
   background: var(--verified-tint);
 }
@@ -1063,9 +1089,48 @@ p {
   color: var(--ink-soft);
 }
 
+/* One disclosure idiom, not two (audit F7).
+   ────────────────────────────────────────────────────────────────────────
+   The results board showed the Disclosure component's circled + alongside
+   this element's raw native triangle, on the same screen, doing the same
+   job. A native marker is a strong "unstyled" tell, and two symbols for one
+   action makes a reader wonder whether they mean different things.
+
+   This borrows the circle rather than reimplementing it — same size, same
+   border, same colour token — so the two stay in step if either changes. */
 .pair__constraints summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
+  list-style: none;
+}
+
+.pair__constraints summary::-webkit-details-marker {
+  display: none;
+}
+
+.pair__constraints summary::before {
+  content: '+';
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--terracotta);
+  color: var(--terracotta-on-tint);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+
+.pair__constraints[open] summary::before {
+  /* A real minus sign (U+2212), matching Disclosure.tsx's own glyph — a
+     hyphen is narrower than the plus it replaces and makes the circle jitter
+     on open. */
+  content: '−';
 }
 
 /* ─── Equity dial ───────────────────────────────────────────────────────── */
@@ -1088,7 +1153,7 @@ p {
   flex: 1;
   -webkit-appearance: none;
   height: 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-pill);
   background: var(--line);
 }
 
@@ -1900,7 +1965,7 @@ main.page > .section-band {
   left: 16px;
   bottom: 15px;
   padding: 8px 11px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   /* Hardcoded light values here stayed light in dark mode while the text
      colour below flipped to light — an invisible label. Tokenised so both
      sides move together. */
@@ -2061,7 +2126,7 @@ main.page > .section-band {
 .journey__dots li.active {
   background: var(--terracotta);
   width: 18px;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
 }
 
 .journey__label::first-letter {
@@ -2196,7 +2261,7 @@ main.page > .section-band {
 .proof {
   padding: 9px 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--verified-readable);
   font-weight: 700;
   font-size: var(--text-xs);
@@ -2221,7 +2286,7 @@ main.page > .section-band {
 
 .filter-btn {
   padding: 9px 15px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line);
   color: var(--ink-soft);
   font-weight: 600;
@@ -2531,7 +2596,7 @@ main.page > .section-band {
   align-items: center;
   gap: 6px;
   border: 2px solid currentColor;
-  border-radius: 3px;
+  border-radius: var(--radius-pill);
   padding: 5px 10px;
   font-weight: var(--weight-bold);
   font-size: var(--text-xs);
@@ -2697,7 +2762,7 @@ main.page > .section-band {
 .modal {
   width: min(540px, 100%);
   padding: 30px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-modal);
   position: relative;
@@ -2803,7 +2868,7 @@ main.page > .section-band {
   .hero-dog {
     min-height: 320px;
     max-height: 390px;
-    border-radius: 14px;
+    border-radius: var(--radius);
   }
   .section-head {
     flex-direction: column;
