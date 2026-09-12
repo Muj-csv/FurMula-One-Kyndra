@@ -12,7 +12,9 @@
    class name — only the tokens and shared shapes changed — so no component
    logic moved when the look did. */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap');
+/* Webfonts are loaded from index.html — see the note there. An @import
+   here would add two round-trips before any text could render in its real
+   face. */
 
 /* ═══ DESIGN TOKENS ═══════════════════════════════════════════════════════
    Kyndra_UI_UX_Redesign_Prompt.md §3 (palette) and §32 (token system).
@@ -157,18 +159,50 @@
   /* Fluid section heading — sits between --text-2xl and --text-3xl. */
   --text-section: clamp(1.7rem, 3vw, 2.3rem);
 
+  /* Measure — brief §5, and audit finding F2.
+     Body text was running 98-102 characters per line because almost nothing
+     set a max-width. Comfortable is 60-75: past roughly 75 the eye loses the
+     start of the next line on the return sweep, and long unbounded lines are
+     the clearest signal that nobody set the type. */
+  --measure: 68ch;
+  --measure-tight: 58ch;
+
   --leading-tight: 1.15;
   --leading-snug: 1.35;
   --leading-body: 1.55;
 
+  /* Three weights, and all three are really loaded. 500 and 800 were in this
+     scale but appeared twice and four times respectively in the whole
+     stylesheet — not enough use to justify two more font files, and a weight
+     that is named but not downloaded gets SYNTHESISED by the browser, which
+     looks worse than the weight you meant to avoid. */
   --weight-normal: 400;
-  --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
-  --weight-black: 800;
 
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Two voices, not one.
+     ────────────────────────────────────────────────────────────────────
+     Both of these were 'Plus Jakarta Sans'. A single geometric sans set at
+     700 for every heading and 400 for every paragraph is the most
+     recognisable signature of a page nobody typeset — and "Warm Editorial"
+     (§4) asks for the opposite of that.
+
+     Fraunces is the display voice: an old-style serif with real warmth and
+     an optical-size axis, so it holds together from a 14px legend up to the
+     4.35rem hero. It is doing the job Playfair usually gets handed, and it
+     was chosen over Playfair precisely because Playfair is the default
+     "make it look premium" pick and reads as one.
+
+     Plus Jakarta Sans keeps everything that is READ rather than scanned:
+     body copy, labels, form controls, data. The fallbacks are real faces
+     with similar metrics, not just the generic keyword, so a failed webfont
+     degrades to something considered. */
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  /* Never let the browser invent a weight for the display face. If a weight
+     is ever requested that index.html does not load, this makes it fall back
+     to a real one instead of synthesising a smeared fake — which is exactly
+     what was happening when Fraunces was pinned to a single weight. */
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* Light is the product's default, not the operating system's preference —
      see the note on the dark block below. `light` rather than `light dark`
@@ -292,6 +326,7 @@ h3,
 h4 {
   margin: 0;
   font-family: var(--font-display);
+  font-synthesis-weight: none;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -543,7 +578,7 @@ p {
   background: var(--olive-strong);
   color: #fff;
   font-size: var(--text-xs);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -883,16 +918,27 @@ p {
 }
 
 .stat__value {
+  /* Large numbers are display type, not data type (§4). The serif gives the
+     result count the weight the brief wanted the results screen to have. */
+  font-family: var(--font-display);
   font-size: var(--text-2xl);
   font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
   line-height: 1.1;
   color: var(--ink);
+}
+
+/* Was letterspaced ALL-CAPS. "VIOLATIONS IF PLACED FIRST-COME-FIRST-SERVED"
+   is a sentence, and a sentence set in capitals wraps badly, reads slowly and
+   distorts the tile it sits in (§5, and audit F4). ::first-letter gets the
+   sentence case without touching the markup's strings. */
+.stat__label::first-letter {
+  text-transform: uppercase;
 }
 
 .stat__label {
   font-size: var(--text-xs);
   color: var(--ink-soft);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 600;
 }
@@ -1786,14 +1832,14 @@ main.page > .section-band {
   margin: 0 0 20px;
   font-size: var(--text-display);
   line-height: 1.03;
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   letter-spacing: -0.03em;
 }
 
 .hero h1 em {
   font-style: normal;
   color: var(--terracotta-on-tint);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
 }
 
 .hero-copy {
@@ -1802,7 +1848,7 @@ main.page > .section-band {
   color: var(--ink-soft);
   font-size: var(--text-lg);
   line-height: 1.6;
-  font-weight: 500;
+  font-weight: var(--weight-normal);
 }
 
 .hero-actions {
@@ -2018,11 +2064,14 @@ main.page > .section-band {
   border-radius: 4px;
 }
 
+.journey__label::first-letter {
+  text-transform: uppercase;
+}
+
 .journey__label {
   font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--terracotta-on-tint);
 }
 
@@ -2044,7 +2093,7 @@ main.page > .section-band {
   margin: 0;
   color: var(--ink);
   font-size: var(--text-xl);
-  font-weight: 500;
+  font-weight: var(--weight-normal);
   line-height: 1.5;
 }
 
@@ -2484,7 +2533,7 @@ main.page > .section-band {
   border: 2px solid currentColor;
   border-radius: 3px;
   padding: 5px 10px;
-  font-weight: 800;
+  font-weight: var(--weight-bold);
   font-size: var(--text-xs);
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -2789,3 +2838,42 @@ main.page > .section-band {
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══ MEASURE ═════════════════════════════════════════════════════════════
+   Polish Phase 4, audit finding F2.
+
+   Body text was running 98-102 characters per line — measured on the About
+   page at a 1521px viewport — because almost nothing set a max-width.
+   Comfortable is 60-75: past roughly 75 the eye starts losing the beginning
+   of the next line on the return sweep, and long unbounded lines are the
+   clearest sign that nobody set the type.
+
+   Applied per class rather than to a bare `p`, because several paragraphs in
+   this app are grid or flex children whose width is already doing layout
+   work, and capping those would leave holes.
+
+   Appended as a block rather than edited into thirty rules in place —
+   Kyndra_UI_Polish_Prompt.md §0.2 Rule 4. */
+
+.provenance > span:last-child,
+.citation-item,
+.honesty-note,
+.results__note,
+.dial__guardrail,
+.intake__hint,
+.pair__ranks,
+.pair__counterfactual,
+.section-head p,
+.step span,
+.unmatched p,
+.why-not p {
+  max-width: var(--measure);
+}
+
+/* Denser text — the reading is slower here, so the line is shorter. */
+.reason,
+.field__hint,
+.hero-copy {
+  max-width: var(--measure-tight);
+}
+
