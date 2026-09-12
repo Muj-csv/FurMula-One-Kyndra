@@ -89,7 +89,9 @@ export function NavBar({
   return (
     <nav className="top-nav" aria-label="Primary navigation">
       <button type="button" className="nav-logo" onClick={() => onNavigate('home')}>
-        <img className="logo-mark" src="/kyndra-logo.png" alt="" aria-hidden="true" />
+        <svg className="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <use href="#kyndra-mark" />
+        </svg>
         Kyndra
       </button>
 

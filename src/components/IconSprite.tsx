@@ -1,4 +1,4 @@
-// The paw-mark logo glyph, ported from Frontend/shared.js's SVG sprite.
+// The Kyndra mark and the status glyphs, as one inline SVG sprite.
 //
 // Only the paw mark is ported. shared.js also defined dog/cat/rabbit
 // silhouette symbols, used there as per-animal avatars — but AnimalAvatar.tsx
@@ -12,17 +12,27 @@ export function IconSprite() {
   return (
     <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
       <defs>
-        <symbol id="paw-icon" viewBox="0 0 32 32">
-          <circle cx="16" cy="21" r="8" fill="#24231F" />
-          <circle cx="7" cy="12" r="4" fill="#24231F" />
-          <circle cx="16" cy="8" r="4.2" fill="#24231F" />
-          <circle cx="25" cy="12" r="4" fill="#24231F" />
-        </symbol>
-        <symbol id="paw-icon-light" viewBox="0 0 32 32">
-          <circle cx="16" cy="21" r="8" fill="#fff" />
-          <circle cx="7" cy="12" r="4" fill="#fff" />
-          <circle cx="16" cy="8" r="4.2" fill="#fff" />
-          <circle cx="25" cy="12" r="4" fill="#fff" />
+        {/* ─── The Kyndra mark ───────────────────────────────────────────
+            Flat, one colour, drawn in `currentColor` so the nav and the
+            footer can tint it from tokens and dark mode needs no second
+            asset.
+
+            It replaces a 3D glassmorphic render in teal-green and orange —
+            a colour pair that appears nowhere in the Terracotta / Chile /
+            Olive / Sunset palette, that read as generated art, and that
+            shipped as a 697x855 PNG to be displayed at 32px.
+
+            Two symbols (paw-icon, paw-icon-light) used to live here, one
+            hardcoded near-black and one hardcoded white, because a fixed
+            fill cannot follow a theme. currentColor makes both unnecessary.
+
+            Four toes, not the three the old sprite drew. */}
+        <symbol id="kyndra-mark" viewBox="0 0 32 32">
+          <ellipse cx="6.6" cy="15" rx="3.3" ry="4.3" fill="currentColor" transform="rotate(-24 6.6 15)" />
+          <ellipse cx="12.6" cy="9.2" rx="3.4" ry="4.6" fill="currentColor" transform="rotate(-9 12.6 9.2)" />
+          <ellipse cx="19.4" cy="9.2" rx="3.4" ry="4.6" fill="currentColor" transform="rotate(9 19.4 9.2)" />
+          <ellipse cx="25.4" cy="15" rx="3.3" ry="4.3" fill="currentColor" transform="rotate(24 25.4 15)" />
+          <ellipse cx="16" cy="23.2" rx="7.6" ry="6.4" fill="currentColor" />
         </symbol>
 
         {/* Status glyphs — real iconography for the satisfied/eliminated

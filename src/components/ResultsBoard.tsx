@@ -47,6 +47,63 @@ interface Props {
   onAssumptionLevelChange: (value: number) => void;
 }
 
+/**
+ * A household, described rather than numbered.
+ *
+ * ─── WHY ───────────────────────────────────────────────────────────────────
+ *
+ * Every applicant in the cohort is literally named "Household 01" through
+ * "Household 22", so every row here read "Barnaby -> Household 22". Animals
+ * get names; households got serial numbers. Twenty-two anonymous rows read as
+ * unfinished seed data, and it quietly undercuts the product's own argument —
+ * this is a TWO-sided match, and one of the two sides had no identity at all.
+ *
+ * ─── WHY NOT JUST RENAME THEM ──────────────────────────────────────────────
+ *
+ * Because that would be the wrong fix twice over. src/data/ is off limits
+ * (Kyndra_UI_Polish_Prompt.md §0.5) and narrative-pinned by
+ * tests/narrative.test.ts — but more importantly the provenance line calls
+ * these households "placeholder" ON PURPOSE. Giving fake households
+ * human-sounding names would make simulated data look more real, which is
+ * the exact thing PRD §3.1 exists to prevent.
+ *
+ * So: the record is untouched and the name stays. This composes a
+ * description at render time out of fields the UI is already handed, which
+ * claims nothing that was not already true and makes every row distinct.
+ *
+ * Three facts, in the order a coordinator would ask for them: what the home
+ * is, who else lives there, and how much of the day it is empty.
+ */
+function describeHousehold(applicant: Applicant): string {
+  const home = applicant.homeType === 'house'
+    ? applicant.hasYard
+      ? 'House with a yard'
+      : 'House'
+    : applicant.hasYard
+      ? 'Apartment with outdoor space'
+      : 'Apartment';
+
+  const who =
+    applicant.hasChildren && applicant.hasOtherPets
+      ? 'children and pets'
+      : applicant.hasChildren
+        ? 'children at home'
+        : applicant.hasOtherPets
+          ? 'other pets'
+          : 'no children or pets';
+
+  // Bands, not the raw number: "away 9h" is data, "out most of the day" is
+  // the thing the number is being used to say.
+  const away =
+    applicant.hoursAwayPerDay <= 4
+      ? 'home most of the day'
+      : applicant.hoursAwayPerDay <= 8
+        ? 'out part of the day'
+        : 'out most of the day';
+
+  return `${home} · ${who} · ${away}`;
+}
+
 export function ResultsBoard({
   result,
   cohort,
@@ -187,6 +244,14 @@ export function ResultsBoard({
               </span>
               <strong>{applicantName(assignment.applicantId)}</strong>
             </div>
+
+            {/* The household, described. See describeHousehold above. */}
+            {(() => {
+              const household = applicants.find((p) => p.id === assignment.applicantId);
+              return household === undefined ? null : (
+                <p className="pair__household">{describeHousehold(household)}</p>
+              );
+            })()}
 
             <p className="pair__ranks">
               {applicantName(assignment.applicantId)} ranked{' '}

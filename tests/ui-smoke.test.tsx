@@ -109,6 +109,43 @@ describe('the demo path a judge actually walks', () => {
   });
 });
 
+describe('households are described, not just numbered', () => {
+  it('gives every placement row a household description, and they differ', () => {
+    renderAt('match');
+    fireEvent.click(screen.getByTestId('load-demo-cohort'));
+    fireEvent.click(screen.getByTestId('run-match'));
+
+    const rows = [...screen.getByTestId('placements').querySelectorAll(':scope > li')];
+    const described = rows.map((row) => row.querySelector('.pair__household')?.textContent ?? '');
+
+    expect(described).toHaveLength(rows.length);
+    expect(described.every((text) => text.length > 0)).toBe(true);
+
+    // The point of the descriptor is that "Household 14" and "Household 22"
+    // stop being interchangeable. If every row says the same thing it has
+    // added words without adding information.
+    expect(new Set(described).size).toBeGreaterThan(1);
+  });
+});
+
+describe('the simulated-cohort disclosure', () => {
+  // PRD §3.1 wants it wherever the cohort appears — and only there. Overview
+  // is presentational: no animals, no households, no counts. A disclaimer
+  // about data that is not on screen is noise, and noise is what trains
+  // people to skip the notices that matter.
+  it('is absent on Overview, which shows no cohort', () => {
+    renderAt('');
+    expect(document.querySelector('.provenance')).toBeNull();
+  });
+
+  for (const hash of ['cohort', 'match', 'evidence']) {
+    it(`is present on "${hash}", which does`, () => {
+      renderAt(hash);
+      expect(document.querySelector('.provenance')).toBeTruthy();
+    });
+  }
+});
+
 describe('theme', () => {
   // The brief's requirement is blunt: light is the default and the operating
   // system does not get a vote. Before this, the only dark-mode mechanism was

@@ -29,7 +29,7 @@
 // so green read as "good" on the animals who had waited longest.
 
 import { useState } from 'react';
-import type { Animal } from '../engine';
+import { CONSTRAINTS, type Animal } from '../engine';
 import { AnimalAvatar } from './AnimalAvatar';
 import { AnimalIntake } from './AnimalIntake';
 import { JourneyTrack } from './JourneyTrack';
@@ -105,7 +105,17 @@ export function CohortPage({
             <h2>Cohort Demo</h2>
             <p>These are the animals waiting, and the constraints that shape who they can go home with.</p>
           </div>
-          <div className="proof">Verified matching rules</div>
+          {/* Was "Verified matching rules" — a trust badge the product awarded
+              itself. Verified by whom? An unattributed claim of verification
+              reads as decoration, and on a page whose entire argument is
+              transparency it slightly REDUCES credibility (audit F9).
+
+              Replaced with something checkable: the count comes from the
+              engine's own constraint list, and every one of those rules
+              carries a citation the About page prints in full. A fact the
+              reader can go and test, instead of a claim they are asked to
+              accept. */}
+          <div className="proof">{CONSTRAINTS.length} rules, each cited</div>
         </div>
 
         <div className="actions" style={{ marginTop: 0, marginBottom: '20px', justifyContent: 'space-between' }}>

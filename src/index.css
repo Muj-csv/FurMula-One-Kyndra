@@ -1028,6 +1028,15 @@ p {
   background: var(--verified-tint);
 }
 
+/* The household, described rather than numbered — polish Phase 6, audit F3.
+   Sits directly under the pairing so the row answers "who is this household?"
+   before it explains why they were chosen. */
+.pair__household {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+}
+
 .pair__ranks,
 .pair__counterfactual {
   margin: 0.5rem 0 0;
@@ -1671,11 +1680,21 @@ p {
   transform: scale(0.97);
 }
 
+/* One mark, tinted per context rather than shipped twice. It is drawn in
+   currentColor, so a token sets it and both themes follow — which is what
+   the two hardcoded paw symbols it replaced could not do. */
 .logo-mark {
   width: 30px;
   height: 30px;
   flex-shrink: 0;
-  object-fit: contain;
+  color: var(--terracotta);
+}
+
+/* The footer band is deliberately dark in BOTH themes, so the mark there is
+   warm-light rather than brand-terracotta, which would sit too close to the
+   ground it is printed on. */
+.site-footer .logo-mark {
+  color: var(--sunset);
 }
 
 /* Sized for the top nav, not the footer's logo mark, which shares these
