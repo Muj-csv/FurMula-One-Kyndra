@@ -44,6 +44,26 @@ function renderAt(hash: string) {
   return render(<App />);
 }
 
+/**
+ * Answer the one media query the hero asks about.
+ *
+ * jsdom has no matchMedia at all, so without this the component reads
+ * "no preference expressed" and the reduced-motion branch is never reached.
+ * Callers restore the original — this stubs a global.
+ */
+function stubReducedMotion(reduced: boolean) {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches: query.includes('prefers-reduced-motion') ? reduced : false,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }),
+  });
+}
+
 describe('every page mounts', () => {
   for (const hash of ['', 'cohort', 'match', 'evidence']) {
     it(`renders "${hash === '' ? 'home' : hash}" without throwing`, () => {
@@ -211,40 +231,75 @@ describe('theme', () => {
   });
 });
 
-describe('the hero scrub on a browser that is missing things', () => {
-  // jsdom has no matchMedia, so the scrub hook returns before it reaches
-  // anything else — which means its platform guards are never exercised by
-  // the other tests in this file. This test pretends to be a fine-pointer
-  // browser so the rest of the hook actually runs.
-  //
-  // It exists because this exact class of bug has now bitten twice: an
-  // unguarded window.matchMedia call threw during render in Phase 3, and the
-  // same shape of mistake was available again with IntersectionObserver.
-  it('renders where IntersectionObserver does not exist', () => {
+/**
+ * The hero dog is an ambient loop, and the only thing about it worth pinning
+ * is that it stays ambient: it must autoplay silently, repeat forever, never
+ * demand a gesture, and never play for someone who asked for less motion.
+ *
+ * The cursor-tracking tests that used to live here are gone with the feature
+ * — there is no pointer behaviour left to guard.
+ */
+describe('the hero dog loop', () => {
+  const heroVideo = () => document.querySelector('.hero-dog__video') as HTMLVideoElement | null;
+
+  it('is a muted, looping, inline autoplay video', () => {
+    renderAt('');
+    const video = heroVideo();
+    expect(video).toBeTruthy();
+    // muted + playsInline are what make autoplay permissible at all; without
+    // either one, browsers refuse and the hero silently becomes a poster.
+    expect(video?.hasAttribute('muted') || video?.muted).toBeTruthy();
+    expect(video?.hasAttribute('playsinline')).toBe(true);
+    expect(video?.hasAttribute('loop')).toBe(true);
+    expect(video?.hasAttribute('autoplay')).toBe(true);
+    expect(video?.hasAttribute('controls')).toBe(false);
+  });
+
+  it('carries a poster, so the box is never an empty rectangle', () => {
+    renderAt('');
+    // This is the whole fallback story: before the video arrives, if it never
+    // arrives, and under reduced motion, the poster is what stands in.
+    expect(heroVideo()?.getAttribute('poster')).toBe('/hero-dog-poster.webp');
+    // Intrinsic size on the element, so the box does not reflow on decode.
+    expect(heroVideo()?.getAttribute('width')).toBe('720');
+    expect(heroVideo()?.getAttribute('height')).toBe('1280');
+  });
+
+  it('is described once, as a picture, not as a media player', () => {
+    renderAt('');
+    const stage = document.querySelector('.hero-dog');
+    // A decorative autoplaying video announces nothing useful on its own, and
+    // would offer media controls it does not have. The wrapper carries the
+    // description; the video is hidden from assistive tech.
+    expect(stage?.getAttribute('role')).toBe('img');
+    expect(stage?.getAttribute('aria-label')).toMatch(/\w/);
+    expect(heroVideo()?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('does not autoplay for a visitor who asked for reduced motion', () => {
     const realMatchMedia = window.matchMedia;
-    const realObserver = window.IntersectionObserver;
-
-    // A desktop browser: fine pointer, no reduced-motion preference.
-    Object.defineProperty(window, 'matchMedia', {
-      configurable: true,
-      writable: true,
-      value: (query: string) => ({
-        matches: query.includes('pointer: fine'),
-        media: query,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-      }),
-    });
-    // …but an old one, with no IntersectionObserver.
-    // @ts-expect-error deliberately removing a platform API for this test
-    delete window.IntersectionObserver;
-
+    stubReducedMotion(true);
     try {
-      expect(() => renderAt('')).not.toThrow();
-      expect(document.querySelector('.hero-dog')).toBeTruthy();
+      renderAt('');
+      // The attribute is the only thing that can decide the FIRST frame,
+      // before any effect has run — so it has to be absent, not merely
+      // countermanded afterwards.
+      expect(heroVideo()?.hasAttribute('autoplay')).toBe(false);
     } finally {
       window.matchMedia = realMatchMedia;
-      window.IntersectionObserver = realObserver;
+    }
+  });
+
+  // POSITIVE CONTROL for the test above. Without it, that assertion would
+  // keep passing if the stub stopped reaching the component at all.
+  it('does autoplay when no such preference is expressed', () => {
+    const realMatchMedia = window.matchMedia;
+    stubReducedMotion(false);
+    try {
+      renderAt('');
+      expect(heroVideo()?.hasAttribute('autoplay')).toBe(true);
+    } finally {
+      window.matchMedia = realMatchMedia;
     }
   });
 });

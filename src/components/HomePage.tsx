@@ -1,7 +1,10 @@
 // HomePage — the landing screen. Ported from Frontend/index.html's hero and
 // "how it works" explainer. Presentational only: no engine calls, no cohort
-// state. The cursor-scrub hero video is the one piece of interaction, ported
-// from shared.js's HERO DOG SCRUB block as a plain effect — no dependency.
+// state, and — since the hero dog became an ambient loop rather than a
+// cursor-driven scrub — no interaction either. The only JavaScript the hero
+// needs now is the one thing markup cannot express: holding playback to the
+// visitor's prefers-reduced-motion setting while that setting can still
+// change.
 //
 // ─── REDESIGN PHASE 3 — ONE EXPLANATION, NOT THREE ─────────────────────────
 //
@@ -23,228 +26,77 @@
 // technical judge should still be able to inspect it". Nothing was deleted:
 // every claim the third section made is still on the page, one click down.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Page } from './NavBar';
 import { JourneyTrack } from './JourneyTrack';
 import { Disclosure } from './Disclosure';
 
-/** Timestamp (seconds) where the video's left-to-right pan ends. */
-const HORIZONTAL_PAN_END_TIME = 2.0;
+/**
+ * Does this visitor want motion reduced?
+ *
+ * Live, not read once: the setting can be toggled while the page is open, and
+ * an ambient loop is precisely the kind of thing someone turns it on to stop.
+ *
+ * Optional-called and guarded — matchMedia is absent in jsdom, and a missing
+ * media-query API is not a reason to throw during render. No answer is read
+ * as "no preference expressed", which is the same default the browser uses.
+ */
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(
+    () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true,
+  );
 
-/** Fraction of the remaining distance covered each frame. Lower = heavier. */
-const EASE = 0.16;
+  useEffect(() => {
+    const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (query === undefined) return;
+    const onChange = () => setReduced(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
 
-/** Below this gap (seconds) the head has arrived; stop animating. */
-const SETTLE = 0.004;
-
-/** Don't issue a seek for a movement smaller than this. */
-const MIN_STEP = 0.004;
+  return reduced;
+}
 
 /**
- * The cursor scrub on the hero video.
+ * Hold the hero loop to the visitor's motion preference.
  *
- * ─── WHAT WAS WRONG WITH THIS ──────────────────────────────────────────────
+ * The `autoplay` attribute alone cannot do this: it is read when the element
+ * is inserted, so it settles the question once and has no answer for someone
+ * who turns the preference on afterwards. React removing the attribute does
+ * not stop a video that is already playing either — `autoplay` describes how
+ * playback STARTS, not whether it continues.
  *
- * Three things, and only the first one was visible:
- *
- *   1. It never loaded — fixed in the previous commit (preload before load).
- *
- *   2. It listened on `window` and mapped the cursor across the whole
- *      viewport, so the dog reacted to movement anywhere on the page,
- *      including while the hero was scrolled far out of view. A head turning
- *      in a box you cannot see, driven by a cursor that is reading paragraph
- *      four, is not an interaction — it is a loose event handler.
- *
- *   3. It wrote `video.currentTime` on every pointer move. Each write
- *      cancels the seek in flight, so on a 4.2MB MP4 the decoder never
- *      finishes one frame before being sent somewhere else, and the result
- *      stutters however fast the network is.
- *
- * ─── WHAT IT DOES NOW ──────────────────────────────────────────────────────
- *
- * Tracks against the hero SECTION, not the viewport and not the little video
- * box. The section is the full-width band the cursor is already moving
- * through while reading the headline, which is what makes the effect
- * discoverable; the 370px video box would require hovering the dog itself.
- * Listening on that element means we simply get no events when the cursor is
- * elsewhere, rather than getting events and discarding them.
- *
- * An IntersectionObserver adds the other half: no work at all while the hero
- * is off screen.
- *
- * Between the cursor and the video sits an eased follow — the head moves
- * toward where you are rather than snapping to it — and a seek is skipped
- * entirely while another is still in flight, which is what stops the
- * stuttering.
+ * So the attribute handles the first frame (it is the only thing that can,
+ * before React has mounted an effect) and this keeps it honest from then on.
+ * Rewinding rather than merely pausing is deliberate: a pause leaves the dog
+ * frozen mid-gesture, which reads as a broken asset. Frame 0 is the pose the
+ * poster shows, so a reduced-motion visitor gets the same composed image
+ * anyone sees before playback begins.
  */
-function useHeroDogScrub(
+function useHeroLoopPlayback(
   videoRef: React.RefObject<HTMLVideoElement | null>,
-  heroRef: React.RefObject<HTMLElement | null>,
+  reduced: boolean,
 ) {
   useEffect(() => {
     const video = videoRef.current;
-    const hero = heroRef.current;
-    if (video === null || hero === null) return;
+    if (video === null) return;
 
-    // The whole feature is a CURSOR scrub, so on a touch device it is 4.2MB
-    // of video that can never be interacted with. `pointer: fine` is the
-    // honest gate: no mouse, no download.
-    //
-    // Optional-called: matchMedia is absent in jsdom, and a missing media-query
-    // API is not a reason to throw during render. No answer means no cursor
-    // to scrub with, so the heavy asset stays unfetched — the safe default.
-    if (window.matchMedia?.('(pointer: fine)').matches !== true) return;
-
-    // Reduced motion suppresses the follow, not the picture: the video still
-    // loads and holds its first frame, it just stops chasing the cursor.
-    const reducedMotion =
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
-
-    const stage = video.closest('.hero-dog');
-
-    let requested = false;
-    let scrubbable = false;
-    let onScreen = true;
-    let target = 0;
-    let current = 0;
-    let lastApplied = -1;
-    let frame: number | null = null;
-
-    // ─── Fetching ──────────────────────────────────────────────────────────
-
-    const request = () => {
-      if (requested) return;
-      requested = true;
-      // `preload` must be raised BEFORE load(). The element ships with
-      // preload="none" to stay out of the critical path, but load() runs the
-      // resource selection algorithm, that algorithm consults preload, and
-      // Chrome is entitled to stop before fetching anything — which is
-      // exactly what it did, leaving the box empty forever.
-      video.preload = 'auto';
-      video.load();
-    };
-
-    const whenIdle = () => {
-      // Not `'requestIdleCallback' in window` — that narrows `window` itself
-      // to never in the else branch. Safari still lacks it.
-      if (typeof window.requestIdleCallback === 'function') {
-        window.requestIdleCallback(request, { timeout: 2000 });
-      } else {
-        window.setTimeout(request, 1200);
-      }
-    };
-    if (document.readyState === 'complete') whenIdle();
-    else window.addEventListener('load', whenIdle, { once: true });
-
-    // ─── Readiness ─────────────────────────────────────────────────────────
-
-    const onLoadedMetadata = () => {
-      if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+    if (reduced) {
+      video.pause();
       video.currentTime = 0;
-      current = 0;
-      lastApplied = 0;
-    };
-
-    // canplaythrough, not loadedmetadata: seeking into a range that has not
-    // arrived yet is the other half of the stutter. Until the browser says it
-    // can play the whole thing without stalling, the dog holds its first
-    // frame rather than lurching.
-    const onReady = () => {
-      scrubbable = true;
-      stage?.setAttribute('data-scrub', 'ready');
-    };
-
-    const onError = () => {
-      scrubbable = false;
-      stage?.setAttribute('data-scrub', 'failed');
-    };
-
-    video.addEventListener('loadedmetadata', onLoadedMetadata);
-    video.addEventListener('canplaythrough', onReady);
-    video.addEventListener('error', onError);
-
-    // ─── The eased follow ──────────────────────────────────────────────────
-
-    const step = () => {
-      frame = null;
-      if (!scrubbable) return;
-
-      const delta = target - current;
-      const settled = Math.abs(delta) < SETTLE;
-      current = settled ? target : current + delta * EASE;
-
-      // A seek is already in flight. Do NOT start another — that is the
-      // cancellation that made this stutter — but keep the loop alive so the
-      // follow resumes the moment the decoder catches up.
-      if (!video.seeking && Math.abs(current - lastApplied) >= MIN_STEP) {
-        lastApplied = current;
-        video.currentTime = current;
-      }
-
-      if (!settled || video.seeking) frame = requestAnimationFrame(step);
-    };
-
-    const kick = () => {
-      if (frame === null) frame = requestAnimationFrame(step);
-    };
-
-    // ─── Input ─────────────────────────────────────────────────────────────
-
-    const onPointerMove = (event: PointerEvent) => {
-      if (!onScreen) return;
-      request();
-
-      const rect = hero.getBoundingClientRect();
-      if (rect.width <= 0) return;
-
-      const progress = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-      target = progress * HORIZONTAL_PAN_END_TIME;
-
-      // Only 'active' — never 'ready'. `ready` is set by canplaythrough and
-      // by nothing else, because it is what makes the hint visible. Setting
-      // it from here would put "Move your cursor" back on top of a video
-      // that cannot respond, which is the exact thing this phase set out to
-      // stop.
-      if (scrubbable) stage?.setAttribute('data-scrub', 'active');
-      if (!reducedMotion) kick();
-    };
-
-    hero.addEventListener('pointermove', onPointerMove, { passive: true });
-
-    // ─── Visibility ────────────────────────────────────────────────────────
-    //
-    // Absent in jsdom, and a missing observer is not a reason to throw during
-    // render — the same trap matchMedia set above. Without it the pointer
-    // handler simply runs whenever the cursor is over the hero, which is
-    // already correct; the observer is an optimisation, not the mechanism.
-
-    let observer: IntersectionObserver | null = null;
-    if (typeof IntersectionObserver === 'function') {
-      observer = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0];
-          if (entry === undefined) return;
-          onScreen = entry.isIntersecting;
-          if (!onScreen && frame !== null) {
-            cancelAnimationFrame(frame);
-            frame = null;
-          }
-        },
-        { threshold: 0 },
-      );
-      observer.observe(hero);
+      return;
     }
 
-    return () => {
-      video.removeEventListener('loadedmetadata', onLoadedMetadata);
-      video.removeEventListener('canplaythrough', onReady);
-      video.removeEventListener('error', onError);
-      hero.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('load', whenIdle);
-      observer?.disconnect();
-      if (frame !== null) cancelAnimationFrame(frame);
-    };
-  }, [videoRef, heroRef]);
+    // play() rejects on its own terms — a battery saver, a browser that wants
+    // a gesture first, a decoder that is not ready. None of those are errors
+    // worth surfacing: the poster is already showing the dog, so the hero is
+    // intact either way.
+    try {
+      void video.play()?.catch(() => {});
+    } catch {
+      // jsdom has no media stack at all, and throws outright.
+    }
+  }, [videoRef, reduced]);
 }
 
 /**
@@ -264,14 +116,12 @@ const STEPS: { label: string; detail: string }[] = [
 
 export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  // The hero SECTION is the tracking region, not the viewport and not the
-  // video box — see the note on useHeroDogScrub.
-  const heroRef = useRef<HTMLElement>(null);
-  useHeroDogScrub(videoRef, heroRef);
+  const reducedMotion = usePrefersReducedMotion();
+  useHeroLoopPlayback(videoRef, reducedMotion);
 
   return (
     <>
-      <header className="hero" ref={heroRef}>
+      <header className="hero">
         <div className="hero-inner">
           <div className="hero-copy-block">
             <span className="eyebrow">For animal shelters</span>
@@ -294,11 +144,44 @@ export function HomePage({ onNavigate }: { onNavigate: (page: Page) => void }) {
             <p className="hero-note">Kyndra proposes. Shelter staff decide.</p>
           </div>
 
-          <div className="hero-dog" aria-label="Interactive dog banner. Move your mouse to guide the dog's head.">
-            <video ref={videoRef} muted playsInline preload="none" tabIndex={-1} aria-hidden="true">
-              <source src="/hero-dog.mp4" type="video/mp4" />
-            </video>
-            <div className="hero-dog-label">Move your cursor</div>
+          {/* An ambient loop, not a control. Nothing here reacts to the
+              cursor: the dog sits, looks about and settles, the same way
+              every time, for everyone.
+
+              `role="img"` with a label on the WRAPPER, and aria-hidden on the
+              video itself. A decorative autoplaying video announces nothing
+              useful on its own — assistive tech would offer media controls
+              for a thing that has none — so the pair is described once, as a
+              picture, which is what it is.
+
+              The poster is frame 0, and it carries the hero on its own in
+              three cases: before the video has arrived, if it never arrives,
+              and under prefers-reduced-motion, where playback is held at
+              that same frame. The box is therefore never empty, which is
+              what the old preload="none" video could not promise.
+
+              muted + playsInline are what make autoplay permissible at all;
+              the file has no audio track, so muted costs nothing. */}
+          <div
+            className="hero-dog"
+            role="img"
+            aria-label="An animated beagle sitting and looking around."
+          >
+            <video
+              ref={videoRef}
+              className="hero-dog__video"
+              src="/hero-dog-loop.mp4"
+              poster="/hero-dog-poster.webp"
+              width={720}
+              height={1280}
+              autoPlay={!reducedMotion}
+              muted
+              loop
+              playsInline
+              preload="auto"
+              tabIndex={-1}
+              aria-hidden="true"
+            />
           </div>
         </div>
       </header>
