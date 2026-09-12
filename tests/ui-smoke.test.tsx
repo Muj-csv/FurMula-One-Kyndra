@@ -23,7 +23,7 @@
 // Rename any heading, any button, any sentence: these still pass. Break a
 // screen, and they don't.
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent, within } from '@testing-library/react';
 import { App } from '../src/App';
 import { ApplicantIntake } from '../src/components/ApplicantIntake';
@@ -42,6 +42,103 @@ afterEach(() => {
 function renderAt(hash: string) {
   window.location.hash = hash;
   return render(<App />);
+}
+
+/**
+ * Answer the two media queries the hero dog asks about.
+ *
+ * jsdom has no matchMedia at all, so without this the tracking hook returns
+ * at its first guard and none of the behaviour below is reached. Callers are
+ * responsible for restoring the original — these tests stub a global.
+ */
+function stubPointer(finePointer: boolean, reducedMotion = false) {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches: query.includes('pointer: fine')
+        ? finePointer
+        : query.includes('prefers-reduced-motion')
+          ? reducedMotion
+          : false,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }),
+  });
+}
+
+/** How many of the recorded fetches asked for a dog frame. */
+function frameRequests(spy: { mock: { calls: unknown[][] } }): number {
+  return spy.mock.calls.filter(([input]) => String(input).includes('/hero-dog/')).length;
+}
+
+/**
+ * Make the frame-loading path reachable in jsdom, and controllable.
+ *
+ * Three things are in the way, and each would otherwise make a "no frames
+ * were fetched" assertion pass for the wrong reason:
+ *
+ *   1. jsdom has no createImageBitmap, so the hook returns before loading.
+ *   2. jsdom has no requestIdleCallback, so the load is behind a setTimeout
+ *      the test has to drive.
+ *   3. jsdom's canvas.getContext('2d') returns null — it implements no 2D
+ *      context without the native `canvas` package, which is not worth a
+ *      build dependency for one drawImage call.
+ *   4. fetch would hit the network.
+ *
+ * The positive-control test below fails if this stub stops working, which is
+ * what keeps the negative tests honest.
+ */
+function stubFrameLoading() {
+  const realCreate = Reflect.get(globalThis, 'createImageBitmap');
+  const realIdle = Reflect.get(window, 'requestIdleCallback');
+  const realGetContext = HTMLCanvasElement.prototype.getContext;
+
+  HTMLCanvasElement.prototype.getContext = function stub(kind: string) {
+    return kind === '2d' ? ({ drawImage: () => {} } as unknown as CanvasRenderingContext2D) : null;
+  } as typeof HTMLCanvasElement.prototype.getContext;
+
+  Object.defineProperty(globalThis, 'createImageBitmap', {
+    configurable: true,
+    writable: true,
+    value: async () => ({ close: () => {} }) as unknown as ImageBitmap,
+  });
+  // Force the setTimeout branch, which fake timers can drive.
+  Reflect.deleteProperty(window, 'requestIdleCallback');
+
+  const fetches = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(new Blob([])));
+
+  return {
+    fetches,
+    restore() {
+      fetches.mockRestore();
+      HTMLCanvasElement.prototype.getContext = realGetContext;
+      if (realCreate === undefined) Reflect.deleteProperty(globalThis, 'createImageBitmap');
+      else Object.defineProperty(globalThis, 'createImageBitmap', {
+        configurable: true, writable: true, value: realCreate,
+      });
+      if (realIdle !== undefined) {
+        Object.defineProperty(window, 'requestIdleCallback', {
+          configurable: true, writable: true, value: realIdle,
+        });
+      }
+    },
+  };
+}
+
+/** Mount, then run past the idle delay the loader sits behind. */
+async function mountAndLoad() {
+  vi.useFakeTimers();
+  try {
+    renderAt('');
+    // The loader waits for window 'load' unless the document is already
+    // complete; jsdom may be either, so satisfy both.
+    window.dispatchEvent(new Event('load'));
+    await vi.advanceTimersByTimeAsync(2000);
+  } finally {
+    vi.useRealTimers();
+  }
 }
 
 describe('every page mounts', () => {
@@ -245,6 +342,91 @@ describe('the hero scrub on a browser that is missing things', () => {
     } finally {
       window.matchMedia = realMatchMedia;
       window.IntersectionObserver = realObserver;
+    }
+  });
+
+  // jsdom has no createImageBitmap either, which is now the third platform
+  // API the hook has to survive the absence of. Same class of bug as the two
+  // above, so it gets the same treatment.
+  it('renders where createImageBitmap does not exist', () => {
+    const realMatchMedia = window.matchMedia;
+    stubPointer(true);
+    try {
+      expect(typeof createImageBitmap).toBe('undefined'); // the premise
+      expect(() => renderAt('')).not.toThrow();
+      expect(document.querySelector('.hero-dog__still')).toBeTruthy();
+    } finally {
+      window.matchMedia = realMatchMedia;
+    }
+  });
+});
+
+/**
+ * The still image is the whole fallback story, so it is worth pinning.
+ *
+ * The <video> this replaced shipped `preload="none"` and was the only thing
+ * in the box, so a touch device, a reduced-motion preference, or a failed
+ * load each produced an empty warm rectangle where the hero's dog should be.
+ * The still cannot do that: it is plain markup, it loads everywhere, and it
+ * is what the canvas fades in over rather than replaces.
+ */
+describe('the hero dog without any interaction', () => {
+  it('always renders the neutral still, with real alt text', () => {
+    renderAt('');
+    const still = document.querySelector('.hero-dog__still') as HTMLImageElement | null;
+    expect(still).toBeTruthy();
+    // Index 16 is the forward-facing pose — the rest position the head eases
+    // back to, and the one frame that has to look right standing alone.
+    expect(still?.getAttribute('src')).toBe('/hero-dog/frame-16.webp');
+    expect(still?.getAttribute('alt')).toMatch(/\w/);
+    // Dimensions on the element, so the box does not reflow when it decodes.
+    expect(still?.getAttribute('width')).toBe('512');
+    expect(still?.getAttribute('height')).toBe('910');
+  });
+
+  it('hides the canvas from assistive tech — the still carries the meaning', () => {
+    renderAt('');
+    expect(document.querySelector('.hero-dog__canvas')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  // POSITIVE CONTROL. Without this the two tests below pass for the wrong
+  // reason the moment the loader moves, and nobody finds out.
+  it('fetches every frame once, on a desktop browser that can use them', async () => {
+    const realMatchMedia = window.matchMedia;
+    const loading = stubFrameLoading();
+    stubPointer(true);
+    try {
+      await mountAndLoad();
+      expect(frameRequests(loading.fetches)).toBe(34);
+    } finally {
+      loading.restore();
+      window.matchMedia = realMatchMedia;
+    }
+  });
+
+  it('fetches no frames on a touch device', async () => {
+    const realMatchMedia = window.matchMedia;
+    const loading = stubFrameLoading();
+    stubPointer(false);
+    try {
+      await mountAndLoad();
+      expect(frameRequests(loading.fetches)).toBe(0);
+    } finally {
+      loading.restore();
+      window.matchMedia = realMatchMedia;
+    }
+  });
+
+  it('fetches no frames when the visitor asked for reduced motion', async () => {
+    const realMatchMedia = window.matchMedia;
+    const loading = stubFrameLoading();
+    stubPointer(true, true);
+    try {
+      await mountAndLoad();
+      expect(frameRequests(loading.fetches)).toBe(0);
+    } finally {
+      loading.restore();
+      window.matchMedia = realMatchMedia;
     }
   });
 });
