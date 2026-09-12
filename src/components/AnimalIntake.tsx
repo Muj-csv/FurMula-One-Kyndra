@@ -57,6 +57,19 @@ export function AnimalIntake({
   onSubmit: (animal: Animal) => void;
 }) {
   const [form, setForm] = useState<Animal>(() => blankAnimal(nextId));
+
+  /**
+   * "Days in shelter" keeps its own draft text so it can be EMPTY while you
+   * type in it.
+   *
+   * It used to be `Number(event.target.value)` straight into state, and
+   * `Number('')` is 0 — so the instant the field was cleared, React wrote a
+   * literal 0 back into the box and everything typed next landed beside it.
+   * That is where "0200" came from. The model is only updated from a value
+   * that actually parses; blur restores whatever the model really holds, so
+   * an abandoned empty field falls back rather than reading zero.
+   */
+  const [days, setDays] = useState(String(blankAnimal(nextId).daysInShelter));
   const [needs, setNeeds] = useState('');
 
   const set = <K extends keyof Animal>(key: K, value: Animal[K]) =>
@@ -80,6 +93,9 @@ export function AnimalIntake({
     });
 
     setForm(blankAnimal(nextId));
+    // The draft outlives the form otherwise, and the next animal would open
+    // with the previous one's typed value still in the box.
+    setDays(String(blankAnimal(nextId).daysInShelter));
     setNeeds('');
   };
 
@@ -174,8 +190,15 @@ export function AnimalIntake({
             type="number"
             min={0}
             max={2000}
-            value={form.daysInShelter}
-            onChange={(event) => set('daysInShelter', Number(event.target.value))}
+            value={days}
+            onChange={(event) => {
+              const raw = event.target.value;
+              setDays(raw);
+              if (raw.trim() === '') return; // mid-edit; keep the last good value
+              const parsed = Number(raw);
+              if (Number.isFinite(parsed)) set('daysInShelter', Math.min(2000, Math.max(0, parsed)));
+            }}
+            onBlur={() => setDays(String(form.daysInShelter))}
           />
         </label>
 

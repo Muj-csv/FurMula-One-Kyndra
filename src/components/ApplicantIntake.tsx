@@ -37,6 +37,7 @@ import {
 } from '../data/surveyCapture';
 
 type Level = 1 | 2 | 3 | 4 | 5;
+type NumberField = 'hoursAwayPerDay' | 'maxSizeKg';
 const LEVELS: Level[] = [1, 2, 3, 4, 5];
 
 /**
@@ -112,19 +113,48 @@ export function ApplicantIntake({
     setForm((previous) => ({ ...previous, [key]: value }));
 
   /**
-   * Number inputs, clamped on the way in.
+   * Number inputs that can be empty while you are typing in them.
    *
-   * `Number('')` is 0, so clearing "Largest animal you can take" used to set
-   * maxSizeKg to 0 — which fails the size constraint for EVERY animal in the
-   * cohort, and presents as "no matches" with nothing on screen explaining
-   * why. min/max attributes alone do not prevent it: they gate form
-   * submission, not the value React stores as you type. NaN falls back to
-   * the low end rather than propagating into the engine.
+   * ─── THE TWO BUGS THIS SITS BETWEEN ──────────────────────────────────────
+   *
+   * `Number('')` is 0, and that single fact caused both of them.
+   *
+   *   1. WHAT THE ENGINE SAW. Clearing "Largest animal you can take" set
+   *      maxSizeKg to 0, which fails the size constraint for EVERY animal in
+   *      the cohort — presenting as "no matches" with nothing on screen to
+   *      explain why. min/max attributes do not prevent this: they gate
+   *      submission, not the value React stores as you type.
+   *
+   *   2. WHAT THE VISITOR SAW. The obvious fix — clamp on the way in — cured
+   *      the first bug and caused a second: the field could never be empty,
+   *      because the moment it was cleared React wrote the clamped value
+   *      straight back into the box. Anything typed next landed beside it,
+   *      which is how "Days in shelter" ended up reading 0200.
+   *
+   * So the field keeps its own draft text, which is allowed to be empty, and
+   * the MODEL is only updated from a value that actually parses. Blur drops
+   * the draft, so an abandoned empty field falls back to the last good value
+   * rather than to zero. The engine can still never receive 0.
    */
-  const setNumber = (key: 'hoursAwayPerDay' | 'maxSizeKg', raw: string, lo: number, hi: number) => {
+  const [draft, setDraft] = useState<Partial<Record<NumberField, string>>>({});
+
+  const shown = (key: NumberField) => draft[key] ?? String(form[key]);
+
+  const setNumber = (key: NumberField, raw: string, lo: number, hi: number) => {
+    setDraft((previous) => ({ ...previous, [key]: raw }));
+    if (raw.trim() === '') return; // mid-edit; leave the model on its last good value
     const parsed = Number(raw);
-    set(key, Math.min(hi, Math.max(lo, Number.isFinite(parsed) ? parsed : lo)));
+    if (!Number.isFinite(parsed)) return;
+    set(key, Math.min(hi, Math.max(lo, parsed)));
   };
+
+  /** Stop editing: show whatever the model actually holds. */
+  const commitNumber = (key: NumberField) =>
+    setDraft((previous) => {
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -138,6 +168,7 @@ export function ApplicantIntake({
     // Architecture §12), which a click in this session cannot make true. Only
     // scripts/csv-to-applicants.mjs sets it, and only for rows a person reviewed.
     const applicant: Applicant = { ...form, id: nextId, name };
+    setDraft({});
 
     // Local first, and unconditionally. The household enters the cohort and the
     // engine re-runs whether or not the share is attempted, succeeds, or the
@@ -218,8 +249,9 @@ export function ApplicantIntake({
               type="number"
               min={1}
               max={70}
-              value={form.maxSizeKg}
+              value={shown('maxSizeKg')}
               onChange={(event) => setNumber('maxSizeKg', event.target.value, 1, 70)}
+              onBlur={() => commitNumber('maxSizeKg')}
             />
             <span className="field__hint">
               In kilograms. A firm limit — Kyndra never proposes above it.
@@ -274,8 +306,9 @@ export function ApplicantIntake({
               type="number"
               min={0}
               max={14}
-              value={form.hoursAwayPerDay}
+              value={shown('hoursAwayPerDay')}
               onChange={(event) => setNumber('hoursAwayPerDay', event.target.value, 0, 14)}
+              onBlur={() => commitNumber('hoursAwayPerDay')}
             />
             <span className="field__hint">Hours on a typical day, 0&ndash;14.</span>
           </label>
