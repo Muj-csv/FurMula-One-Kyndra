@@ -119,6 +119,17 @@ export function ResultsBoard({
   const animalName = (id: string) => animals.find((a) => a.id === id)?.name ?? id;
   const applicantName = (id: string) => applicants.find((p) => p.id === id)?.name ?? id;
 
+  /** "340 days waiting" — the fact that makes an animal a person, not a row. */
+  const waitedFor = (id: string) => {
+    const animal = animals.find((a) => a.id === id);
+    return animal === undefined ? '' : `${animal.daysInShelter} days waiting`;
+  };
+
+  const householdOf = (id: string) => {
+    const applicant = applicants.find((p) => p.id === id);
+    return applicant === undefined ? '' : describeHousehold(applicant);
+  };
+
   // Computed once, up here, so the "how does this compare to a person"
   // disclosure can decide its own teaser text — and skip itself entirely —
   // without recomputing baselineComparison() a second time below.
@@ -236,30 +247,32 @@ export function ResultsBoard({
       <ul className="pairs" data-testid="placements">
         {result.assignments.map((assignment) => (
           <li key={assignment.animalId} className="pair">
-            <div className="pair__head">
-              <AnimalAvatar id={assignment.animalId} name={animalName(assignment.animalId)} />
-              <strong>{animalName(assignment.animalId)}</strong>
-              <span className="pair__arrow" aria-hidden="true">
+            {/* ─── Level 1: the result ──────────────────────────────────
+                Two sides and the link between them (§14). It used to be a
+                single run of text — avatar, name, arrow, name — which is a
+                sentence about a match rather than a picture of one. */}
+            <div className="pair__match">
+              <span className="pair__side">
+                <AnimalAvatar id={assignment.animalId} name={animalName(assignment.animalId)} />
+                <span className="pair__side-body">
+                  <strong>{animalName(assignment.animalId)}</strong>
+                  <span className="pair__side-meta">{waitedFor(assignment.animalId)}</span>
+                </span>
+              </span>
+
+              <span className="pair__link" aria-hidden="true">
                 →
               </span>
-              <strong>{applicantName(assignment.applicantId)}</strong>
+
+              <span className="pair__side pair__side--household">
+                <span className="pair__side-body">
+                  <strong>{applicantName(assignment.applicantId)}</strong>
+                  <span className="pair__side-meta">{householdOf(assignment.applicantId)}</span>
+                </span>
+              </span>
             </div>
 
-            {/* The household, described. See describeHousehold above. */}
-            {(() => {
-              const household = applicants.find((p) => p.id === assignment.applicantId);
-              return household === undefined ? null : (
-                <p className="pair__household">{describeHousehold(household)}</p>
-              );
-            })()}
-
-            <p className="pair__ranks">
-              {applicantName(assignment.applicantId)} ranked{' '}
-              {animalName(assignment.animalId)} #{assignment.applicantRankOfAnimal} of their
-              viable animals. The shelter ranked this household #
-              {assignment.shelterRankOfApplicant} for {animalName(assignment.animalId)}.
-            </p>
-
+            {/* ─── Level 2: the reason ─────────────────────────────────── */}
             <ul className="pair__rationale pair__rationale--positive">
               {assignment.rationale.map((line) => (
                 <li key={line}>
@@ -269,18 +282,35 @@ export function ResultsBoard({
               ))}
             </ul>
 
-            <p className="pair__counterfactual">
-              <span className="pair__counterfactual-trigger" tabIndex={0}>
-                What if this pairing hadn't happened? (hover)
-              </span>
-              <span className="pair__counterfactual-text">{assignment.counterfactual}</span>
-            </p>
+            {/* ─── Levels 3 and 4: the evidence ─────────────────────────
+                Three separate things used to sit out here on every one of
+                fourteen cards: a two-line paragraph of ranking prose, a
+                counterfactual that only appeared ON HOVER, and a details
+                element holding the constraint list. That is a lot of
+                simultaneous surface for a screen whose first job is to say
+                what happened.
 
+                They are one disclosure now, which also retires audit F8:
+                the counterfactual's trigger read "What if this pairing
+                hadn't happened? (hover)" — an instruction inside a label,
+                set in italics, and completely unreachable on a touch
+                device, because there is no hover to give it. Inside a real
+                <details> it needs no instruction and works everywhere. */}
             <details className="pair__constraints pair__constraints--positive">
-              <summary>
-                View match details — {assignment.constraintsSatisfied.length} hard constraints
-                satisfied
-              </summary>
+              <summary>See the full reasoning</summary>
+
+              <p className="pair__ranks">
+                {applicantName(assignment.applicantId)} ranked{' '}
+                {animalName(assignment.animalId)} #{assignment.applicantRankOfAnimal} of their
+                viable animals. The shelter ranked this household #
+                {assignment.shelterRankOfApplicant} for {animalName(assignment.animalId)}.
+              </p>
+
+              <p className="pair__counterfactual">{assignment.counterfactual}</p>
+
+              <p className="pair__evidence-head">
+                {assignment.constraintsSatisfied.length} hard constraints satisfied
+              </p>
               <ul>
                 {assignment.constraintsSatisfied.map((label) => (
                   <li key={label}>
